@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>智能知识图谱 | AI学习助手 - 深空旗舰版</title>
+    <title>智能知识图谱 | AI学习助手 - 三级联动版</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -13,89 +13,93 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- 左侧控制面板 -->
+        <!-- 左侧控制面板 - 可伸缩 -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <h1>🌌 智能知识图谱</h1>
-                <p class="subtitle">AI识别笔记 · 金币驱动成长 · 层级联动版</p>
+                <p class="subtitle">AI识别笔记 · 三级联动 · 层级探索版</p>
             </div>
             
-            <!-- 上传区域 -->
+            <!-- 上传区域 - 紧凑版 -->
             <div class="upload-section">
                 <label>📁 上传文件识别知识</label>
                 <div class="upload-area" id="uploadArea">
                     <span class="upload-icon">📤</span>
-                    <span>点击或拖拽文件至此</span>
-                    <span class="upload-hint">支持: 图片, PDF, Word, Excel, TXT</span>
+                    <span>点击或拖拽</span>
+                    <span class="upload-hint">图片/PDF/Word/Excel/TXT</span>
                     <input type="file" id="fileUpload" accept="image/*,.pdf,.docx,.xlsx,.xls,.txt" multiple hidden>
                 </div>
                 <div id="uploadProgress" class="upload-progress" style="display:none">
                     <div class="progress-bar"></div>
-                    <span class="progress-text">识别中...</span>
                 </div>
                 <div id="uploadResult" class="upload-result"></div>
             </div>
 
-            <!-- 文件管理器 - 带删除功能 -->
+            <!-- 文件管理器 -->
             <div class="file-manager-section">
                 <div class="file-manager-header" id="fileManagerHeader">
                     <h3>📂 文件知识库</h3>
-                    <button id="downloadAllFilesBtn" class="download-btn">⬇️ 下载全部</button>
+                    <button id="downloadAllFilesBtn" class="download-btn">⬇️ 下载</button>
                 </div>
                 <div id="fileManagerContent" class="file-manager-content" style="display:block;">
-                    <div style="padding:12px;text-align:center;color:#6b7280;">暂无上传文件</div>
+                    <div style="padding:8px;text-align:center;color:#6b7280;font-size:0.7rem;">暂无文件</div>
                 </div>
             </div>
 
             <!-- 手动添加 -->
             <div class="input-section">
-                <label>✏️ 手动添加知识点</label>
+                <label>✏️ 手动添加</label>
                 <div class="keyword-input-group">
-                    <input type="text" id="keywordInput" placeholder="例如: 量子纠缠, 存在主义...">
-                    <button id="addKeywordBtn">➕ 添加</button>
+                    <input type="text" id="keywordInput" placeholder="例如: 量子纠缠...">
+                    <button id="addKeywordBtn">➕</button>
                 </div>
             </div>
 
-            <!-- 预设知识框架 -->
+            <!-- 预设框架 -->
             <div class="preset-section">
-                <label>🎯 预设知识框架 <span class="preset-hint">(点击切换显示/隐藏)</span></label>
+                <label>🎯 预设框架</label>
                 <div class="preset-buttons">
-                    <button class="preset-btn" data-path="physics">⚛️ 物理学</button>
-                    <button class="preset-btn" data-path="philosophy">📜 哲学</button>
-                    <button class="preset-btn" data-path="ai">🤖 人工智能</button>
-                    <button class="preset-btn" data-path="history">🏛️ 历史</button>
-                    <button class="preset-btn" data-path="biology">🧬 生物学</button>
+                    <button class="preset-btn" data-path="physics">⚛️物理</button>
+                    <button class="preset-btn" data-path="philosophy">📜哲学</button>
+                    <button class="preset-btn" data-path="ai">🤖AI</button>
+                    <button class="preset-btn" data-path="history">🏛️历史</button>
+                    <button class="preset-btn" data-path="biology">🧬生物</button>
                 </div>
             </div>
 
             <!-- 节点列表 -->
             <div class="node-list-panel">
-                <h3>📚 知识节点宇宙</h3>
+                <h3>📚 知识宇宙</h3>
                 <div class="legend-compact">
-                    <span><span class="color-dot red"></span> 核心大类</span>
-                    <span><span class="color-dot blue"></span> 已掌握</span>
-                    <span><span class="color-dot gray"></span> 待学习</span>
-                    <span><span class="color-dot gold"></span> 高价值</span>
+                    <span><span class="color-dot red"></span>一级</span>
+                    <span><span class="color-dot blue"></span>二级</span>
+                    <span><span class="color-dot gray"></span>三级</span>
                 </div>
                 <ul id="nodeListUl"></ul>
-                <div class="node-hint">💡 右键删除 | 点击展开层级</div>
+                <div class="node-hint">💡 点击节点展开下级 | 右键删除</div>
             </div>
 
             <!-- 推荐学习 -->
             <div class="recommend-section">
-                <h3>💡 推荐学习路径</h3>
+                <h3>💡 推荐学习</h3>
                 <div id="recommendList" class="recommend-list"></div>
             </div>
         </div>
 
-        <!-- 右侧画布区 - 支持滑动 -->
+        <!-- 伸缩按钮 -->
+        <div class="resize-handle" id="resizeHandle">
+            <div class="handle-line"></div>
+            <div class="handle-line"></div>
+        </div>
+
+        <!-- 右侧画布区 -->
         <div class="canvas-container" id="canvasContainer">
             <div class="toolbar">
                 <button id="zoomInBtn">🔍 +</button>
                 <button id="zoomOutBtn">🔍 -</button>
                 <button id="resetViewBtn">🔄 重置</button>
                 <button id="clearAllBtn">🗑️ 清空</button>
-                <span id="totalGold">💰 总金币: 0</span>
+                <span id="totalGold">💰 0</span>
             </div>
             <svg id="lineSvg" class="line-layer"></svg>
             <div class="scroll-wrapper" id="scrollWrapper">
@@ -107,11 +111,10 @@
     <!-- 底部搜索栏 -->
     <div class="footer-search">
         <div class="search-wrapper">
-            <input type="text" id="searchKeyword" placeholder="🔭 搜索知识点，查看价值...">
+            <input type="text" id="searchKeyword" placeholder="🔭 搜索知识点...">
             <div id="goldDisplay" class="gold-display">
                 <span class="gold-icon">💰</span>
                 <span id="goldValue">0</span>
-                <span class="gold-label">知识金币</span>
             </div>
         </div>
     </div>
