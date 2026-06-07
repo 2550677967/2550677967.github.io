@@ -381,4 +381,63 @@ function initDrag() {
             dragTarget.style.left = `${left}px`;
             dragTarget.style.top = `${top}px`;
             const nodeId = parseInt(dragTarget.getAttribute('data-id'));
-            const node = nodes.find(n
+            const node = nodes.find(n => n.id === nodeId);
+            if (node) { node.x = left; node.y = top; }
+            renderAll();
+        }
+    });
+    document.addEventListener('mouseup', () => { dragTarget = null; });
+    document.addEventListener('mousedown', (e) => {
+        const node = e.target.closest('.node-card');
+        if (node) { dragTarget = node; node.style.cursor = 'grabbing'; e.preventDefault(); }
+    });
+}
+
+// 初始化示例
+function initDemo() {
+    const demoNodes = [
+        { label: '量子物理', x: 200, y: 150, type: 'red' },
+        { label: '经典力学', x: 400, y: 200, type: 'red' },
+        { label: '人工智能', x: 350, y: 350, type: 'red' },
+        { label: '薛定谔方程', x: 150, y: 280, type: 'gray' },
+        { label: '神经网络', x: 500, y: 400, type: 'gray' }
+    ];
+    for (let nd of demoNodes) {
+        addNode(nd.label, nd.x, nd.y);
+    }
+    renderAll();
+}
+
+// 事件绑定
+document.getElementById('addKeywordBtn').addEventListener('click', () => {
+    const input = document.getElementById('keywordInput');
+    if (input.value.trim()) addNode(input.value.trim(), undefined, undefined);
+    renderAll();
+    input.value = '';
+});
+document.getElementById('zoomInBtn').addEventListener('click', () => zoom(0.2));
+document.getElementById('zoomOutBtn').addEventListener('click', () => zoom(-0.2));
+document.getElementById('resetViewBtn').addEventListener('click', resetView);
+document.getElementById('clearAllBtn').addEventListener('click', () => { nodes = []; nextId = 100; renderAll(); });
+document.getElementById('searchKeyword').addEventListener('input', (e) => searchNodeAndShowGold(e.target.value));
+document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => addPresetFramework(btn.getAttribute('data-path')));
+});
+
+// 文件上传
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileUpload');
+uploadArea.addEventListener('click', () => fileInput.click());
+uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.style.borderColor = '#60a5fa'; });
+uploadArea.addEventListener('dragleave', () => uploadArea.style.borderColor = 'rgba(59,130,246,0.5)');
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const files = e.dataTransfer.files;
+    for (let file of files) processFile(file);
+});
+fileInput.addEventListener('change', (e) => {
+    for (let file of e.target.files) processFile(file);
+});
+
+initDrag();
+initDemo();
