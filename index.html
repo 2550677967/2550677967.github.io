@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>知识图谱·学习成长线 | 个人知识库</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 左侧控制面板 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>📚 知识图谱</h1>
+                <p class="subtitle">—— 构建你的学习成长线</p>
+            </div>
+            
+            <!-- 学习进度关键词输入 -->
+            <div class="input-section">
+                <label>🎯 当前学习关键词 / 进度</label>
+                <div class="keyword-input-group">
+                    <input type="text" id="keywordInput" placeholder="例如: 力学, 天文学, 日心说, 笛卡尔..." value="伽利略,日心说,力学,笛卡尔">
+                    <button id="addKeywordBtn">➕ 添加节点</button>
+                </div>
+                <small>💡 输入关键词后点击添加，会在画布上生成可拖拽的知识节点</small>
+            </div>
+
+            <!-- 学习成长线预设 -->
+            <div class="preset-section">
+                <label>🧠 预设学习路径</label>
+                <div class="preset-buttons">
+                    <button class="preset-btn" data-path="physics">物理史路径</button>
+                    <button class="preset-btn" data-path="philosophy">哲学认知路径</button>
+                    <button class="preset-btn" data-path="ai">AI与未来路径</button>
+                </div>
+            </div>
+
+            <!-- 节点列表 + 层级展示 -->
+            <div class="node-list-panel">
+                <h3>📌 知识节点列表</h3>
+                <ul id="nodeListUl"></ul>
+            </div>
+
+            <div class="legend">
+                <div><span class="legend-dot primary"></span> 主节点/学习主线</div>
+                <div><span class="legend-dot child"></span> 子层级/关联知识</div>
+                <div><span class="legend-dot learning"></span> 当前学习焦点</div>
+                <div>💡 拖拽节点 · 点击展开层级</div>
+            </div>
+        </div>
+
+        <!-- 右侧画布区 -->
+        <div class="canvas-container">
+            <div class="toolbar">
+                <button id="resetViewBtn">🔄 重置视图</button>
+                <button id="clearAllBtn">🗑️ 清空所有节点</button>
+                <span id="nodeCount">节点数: 0</span>
+            </div>
+            <svg id="lineSvg" class="line-layer"></svg>
+            <div id="graphCanvas" class="graph-canvas"></div>
+        </div>
+    </div>
+
+    <!-- 引入依赖库 -->
+    <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.17/dist/interact.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
