@@ -2,89 +2,101 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>智能知识图谱 | AI学习助手</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>智能知识图谱 | AI学习助手 - 深空版</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Tesseract.js OCR 库 -->
+    <!-- PDF.js for PDF parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <!-- SheetJS for Excel parsing -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <!-- Mammoth for Word parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.4.2/mammoth.browser.min.js"></script>
+    <!-- Tesseract.js for OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
     <div class="app-container">
-        <!-- 左侧控制面板 -->
+        <!-- 左侧控制面板 - 毛玻璃效果 -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h1>🧠 智能知识图谱</h1>
-                <p class="subtitle">AI识别笔记 · 金币驱动成长</p>
+                <h1>🌌 智能知识图谱</h1>
+                <p class="subtitle">AI识别笔记 · 金币驱动成长 · 深空探索版</p>
             </div>
             
-            <!-- ===== 新增：图片上传OCR区域 ===== -->
+            <!-- ===== 多格式文件上传区域 ===== -->
             <div class="upload-section">
-                <label>📸 上传图片识别文字笔记</label>
+                <label>📁 上传文件识别知识</label>
                 <div class="upload-area" id="uploadArea">
-                    <span>📤 点击或拖拽图片至此</span>
-                    <input type="file" id="imageUpload" accept="image/*" hidden>
+                    <span class="upload-icon">📤</span>
+                    <span>点击或拖拽文件至此</span>
+                    <span class="upload-hint">支持: 图片, PDF, Word, Excel, TXT</span>
+                    <input type="file" id="fileUpload" accept="image/*,.pdf,.docx,.xlsx,.xls,.txt" multiple hidden>
                 </div>
-                <div id="ocrProgress" class="ocr-progress" style="display:none">
+                <div id="uploadProgress" class="upload-progress" style="display:none">
                     <div class="progress-bar"></div>
-                    <span>识别中...</span>
+                    <span class="progress-text">识别中...</span>
                 </div>
-                <div id="ocrResult" class="ocr-result"></div>
+                <div id="uploadResult" class="upload-result"></div>
             </div>
 
             <!-- 手动添加知识点 -->
             <div class="input-section">
                 <label>✏️ 手动添加知识点</label>
                 <div class="keyword-input-group">
-                    <input type="text" id="keywordInput" placeholder="例如: 量子力学, 存在主义...">
+                    <input type="text" id="keywordInput" placeholder="例如: 量子纠缠, 存在主义...">
                     <button id="addKeywordBtn">➕ 添加</button>
                 </div>
             </div>
 
-            <!-- 预设学习路径 -->
+            <!-- 预设知识框架 -->
             <div class="preset-section">
                 <label>🎯 预设知识框架</label>
                 <div class="preset-buttons">
-                    <button class="preset-btn" data-path="physics">🔴 物理学</button>
-                    <button class="preset-btn" data-path="philosophy">🔴 哲学</button>
-                    <button class="preset-btn" data-path="ai">🔴 人工智能</button>
-                    <button class="preset-btn" data-path="history">🔴 历史</button>
+                    <button class="preset-btn" data-path="physics">⚛️ 物理学</button>
+                    <button class="preset-btn" data-path="philosophy">📜 哲学</button>
+                    <button class="preset-btn" data-path="ai">🤖 人工智能</button>
+                    <button class="preset-btn" data-path="history">🏛️ 历史</button>
+                    <button class="preset-btn" data-path="biology">🧬 生物学</button>
                 </div>
             </div>
 
             <!-- 节点列表 -->
             <div class="node-list-panel">
-                <h3>📚 知识节点列表</h3>
+                <h3>📚 知识节点宇宙</h3>
                 <div class="legend-compact">
-                    <span><span class="color-dot red"></span>核心大类</span>
-                    <span><span class="color-dot blue"></span>已掌握</span>
-                    <span><span class="color-dot gray"></span>待学习</span>
+                    <span><span class="color-dot red"></span> 星系核心</span>
+                    <span><span class="color-dot blue"></span> 已探索</span>
+                    <span><span class="color-dot gray"></span> 未探索</span>
+                    <span><span class="color-dot gold"></span> 高价值</span>
                 </div>
                 <ul id="nodeListUl"></ul>
             </div>
 
-            <!-- 学习推荐 -->
+            <!-- 学习推荐 + 网页链接 -->
             <div class="recommend-section">
-                <h3>💡 推荐学习</h3>
+                <h3>💡 推荐学习路径</h3>
                 <div id="recommendList" class="recommend-list"></div>
             </div>
         </div>
 
-        <!-- 右侧画布区 -->
-        <div class="canvas-container">
+        <!-- 右侧画布区 - 支持缩放 -->
+        <div class="canvas-container" id="canvasContainer">
             <div class="toolbar">
+                <button id="zoomInBtn">🔍 + 放大</button>
+                <button id="zoomOutBtn">🔍 - 缩小</button>
                 <button id="resetViewBtn">🔄 重置视图</button>
-                <button id="clearAllBtn">🗑️ 清空所有</button>
+                <button id="clearAllBtn">🗑️ 清空宇宙</button>
                 <span id="totalGold">💰 总金币: 0</span>
             </div>
             <svg id="lineSvg" class="line-layer"></svg>
-            <div id="graphCanvas" class="graph-canvas"></div>
+            <div id="graphCanvas" class="graph-canvas" style="transform-origin: 0 0;"></div>
         </div>
     </div>
 
     <!-- 底部搜索/金币展示栏 -->
     <div class="footer-search">
         <div class="search-wrapper">
-            <input type="text" id="searchKeyword" placeholder="🔍 搜索知识点，查看金币价值...">
+            <input type="text" id="searchKeyword" placeholder="🔭 搜索知识点，查看价值...">
             <div id="goldDisplay" class="gold-display">
                 <span class="gold-icon">💰</span>
                 <span id="goldValue">0</span>
