@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>智能知识图谱 | AI学习助手 - 深空版</title>
+    <title>智能知识图谱 | AI学习助手 - 深空旗舰版</title>
     <link rel="stylesheet" href="style.css">
     <!-- PDF.js for PDF parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -13,17 +13,19 @@
     <script src="https://cdn.jsdelivr.net/npm/mammoth@1.4.2/mammoth.browser.min.js"></script>
     <!-- Tesseract.js for OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- JSZip for打包下载 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
     <div class="app-container">
-        <!-- 左侧控制面板 - 毛玻璃效果 -->
-        <div class="sidebar">
+        <!-- 左侧控制面板 - 支持缩放 -->
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <h1>🌌 智能知识图谱</h1>
                 <p class="subtitle">AI识别笔记 · 金币驱动成长 · 深空探索版</p>
             </div>
             
-            <!-- ===== 多格式文件上传区域 ===== -->
+            <!-- 多格式文件上传区域 -->
             <div class="upload-section">
                 <label>📁 上传文件识别知识</label>
                 <div class="upload-area" id="uploadArea">
@@ -39,6 +41,17 @@
                 <div id="uploadResult" class="upload-result"></div>
             </div>
 
+            <!-- 文件管理系统 - 自动归类 -->
+            <div class="file-manager-section">
+                <div class="file-manager-header" id="fileManagerHeader">
+                    <h3>📂 文件知识库</h3>
+                    <button id="downloadAllFilesBtn" class="download-btn">⬇️ 下载全部</button>
+                </div>
+                <div id="fileManagerContent" class="file-manager-content" style="display:none;">
+                    <!-- 动态生成文件树 -->
+                </div>
+            </div>
+
             <!-- 手动添加知识点 -->
             <div class="input-section">
                 <label>✏️ 手动添加知识点</label>
@@ -48,15 +61,15 @@
                 </div>
             </div>
 
-            <!-- 预设知识框架 -->
+            <!-- 预设知识框架 - 可开关 -->
             <div class="preset-section">
-                <label>🎯 预设知识框架</label>
+                <label>🎯 预设知识框架 <span class="preset-hint">(点击切换显示/隐藏)</span></label>
                 <div class="preset-buttons">
-                    <button class="preset-btn" data-path="physics">⚛️ 物理学</button>
-                    <button class="preset-btn" data-path="philosophy">📜 哲学</button>
-                    <button class="preset-btn" data-path="ai">🤖 人工智能</button>
-                    <button class="preset-btn" data-path="history">🏛️ 历史</button>
-                    <button class="preset-btn" data-path="biology">🧬 生物学</button>
+                    <button class="preset-btn" data-path="physics" data-visible="true">⚛️ 物理学</button>
+                    <button class="preset-btn" data-path="philosophy" data-visible="true">📜 哲学</button>
+                    <button class="preset-btn" data-path="ai" data-visible="true">🤖 人工智能</button>
+                    <button class="preset-btn" data-path="history" data-visible="true">🏛️ 历史</button>
+                    <button class="preset-btn" data-path="biology" data-visible="true">🧬 生物学</button>
                 </div>
             </div>
 
@@ -70,6 +83,7 @@
                     <span><span class="color-dot gold"></span> 高价值</span>
                 </div>
                 <ul id="nodeListUl"></ul>
+                <div class="node-hint">💡 右键点击节点可删除</div>
             </div>
 
             <!-- 学习推荐 + 网页链接 -->
