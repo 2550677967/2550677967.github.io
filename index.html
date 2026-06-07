@@ -20,7 +20,7 @@
                 <p class="subtitle">AI识别笔记 · 三级联动 · 层级探索版</p>
             </div>
             
-            <!-- 上传区域 - 紧凑版 -->
+            <!-- 上传区域 -->
             <div class="upload-section">
                 <label>📁 上传文件识别知识</label>
                 <div class="upload-area" id="uploadArea">
@@ -90,10 +90,25 @@
         <div class="resize-handle" id="resizeHandle">
             <div class="handle-line"></div>
             <div class="handle-line"></div>
+            <div class="handle-line"></div>
         </div>
 
         <!-- 右侧画布区 -->
         <div class="canvas-container" id="canvasContainer">
+            <!-- 每日语录窗口 - 可折叠 -->
+            <div class="quote-window" id="quoteWindow">
+                <div class="quote-header" id="quoteHeader">
+                    <span class="quote-icon">📜</span>
+                    <span class="quote-title">每日激励</span>
+                    <span class="quote-toggle">▼</span>
+                </div>
+                <div class="quote-content" id="quoteContent">
+                    <div class="quote-text" id="quoteText">加载中...</div>
+                    <div class="quote-author" id="quoteAuthor"></div>
+                    <div class="quote-explanation" id="quoteExplanation"></div>
+                </div>
+            </div>
+
             <div class="toolbar">
                 <button id="zoomInBtn">🔍 +</button>
                 <button id="zoomOutBtn">🔍 -</button>

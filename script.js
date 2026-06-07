@@ -3,15 +3,79 @@ let nodes = [];
 let nextId = 100;
 let canvasScale = 1;
 let dragTarget = null;
-let dragOffsetX = 0, dragOffsetY = 0;
+let dragStartX = 0, dragStartY = 0;
+let dragStartLeft = 0, dragStartTop = 0;
 let isDragging = false;
-let sidebarWidth = 280;
+let dragThreshold = 3; // 拖动阈值，小于此值视为点击
 
 let uploadedFiles = [];
 
-// 知识扩展库 - 自动生成子节点
+// ==================== 每日语录库 ====================
+const quotes = [
+    { text: "学而不思则罔，思而不学则殆。", author: "孔子", explanation: "只学习不思考就会迷惑，只思考不学习就会危险。强调学习与思考的结合。" },
+    { text: "知之者不如好之者，好之者不如乐之者。", author: "孔子", explanation: "懂得学习的人不如喜爱学习的人，喜爱学习的人不如以学习为乐的人。" },
+    { text: "天行健，君子以自强不息。", author: "《周易》", explanation: "宇宙不停运转，君子应效法天地，永远不断地前进。" },
+    { text: "宝剑锋从磨砺出，梅花香自苦寒来。", author: "佚名", explanation: "宝剑的锋利来自反复磨砺，梅花的清香源于寒冬。喻指成功需经历艰苦磨练。" },
+    { text: "路漫漫其修远兮，吾将上下而求索。", author: "屈原", explanation: "前方的道路漫长遥远，我将不遗余力地追求探索。" },
+    { text: "不积跬步，无以至千里；不积小流，无以成江海。", author: "荀子", explanation: "没有一步半步的积累，无法到达千里；没有细流的汇聚，无法形成江海。" },
+    { text: "The only limit is your mind.", author: "未知", explanation: "唯一的限制是你的思想。突破思维局限，才能无限可能。" },
+    { text: "Stay hungry, stay foolish.", author: "Steve Jobs", explanation: "求知若饥，虚心若愚。保持对知识的渴望和初学者的心态。" },
+    { text: "Knowledge is power.", author: "Francis Bacon", explanation: "知识就是力量。知识能赋予我们改变世界的能力。" },
+    { text: "The future belongs to those who learn more skills.", author: "未知", explanation: "未来属于那些学习更多技能的人。" },
+    { text: "纸上得来终觉浅，绝知此事要躬行。", author: "陆游", explanation: "从书本上得到的知识终归浅薄，要真正理解需亲身实践。" },
+    { text: "问渠那得清如许？为有源头活水来。", author: "朱熹", explanation: "池塘为何如此清澈？因为有活水源头不断流入。比喻知识需要不断更新。" },
+    { text: "博观而约取，厚积而薄发。", author: "苏轼", explanation: "广泛阅读而简约吸取，深厚积累而缓慢释放。" },
+    { text: "业精于勤，荒于嬉；行成于思，毁于随。", author: "韩愈", explanation: "学业精进在于勤奋，荒废在于玩乐；做事成功在于思考，失败在于随性。" }
+];
+
+// 获取每日语录（基于日期）
+function getDailyQuote() {
+    const today = new Date().toDateString();
+    let stored = localStorage.getItem('dailyQuote');
+    let storedDate = localStorage.getItem('dailyQuoteDate');
+    
+    if (stored && storedDate === today) {
+        return JSON.parse(stored);
+    }
+    
+    // 根据日期选择不同语录
+    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+    const quoteIndex = dayOfYear % quotes.length;
+    const quote = quotes[quoteIndex];
+    
+    localStorage.setItem('dailyQuote', JSON.stringify(quote));
+    localStorage.setItem('dailyQuoteDate', today);
+    return quote;
+}
+
+// 更新每日语录显示
+function updateDailyQuote() {
+    const quote = getDailyQuote();
+    document.getElementById('quoteText').innerHTML = `“${quote.text}”`;
+    document.getElementById('quoteAuthor').innerHTML = `—— ${quote.author}`;
+    document.getElementById('quoteExplanation').innerHTML = `📖 ${quote.explanation}`;
+}
+
+// 语录窗口折叠功能
+function initQuoteWindow() {
+    const quoteWindow = document.getElementById('quoteWindow');
+    const quoteHeader = document.getElementById('quoteHeader');
+    
+    quoteHeader.addEventListener('click', () => {
+        quoteWindow.classList.toggle('collapsed');
+    });
+    
+    // 鼠标悬停高光
+    quoteHeader.addEventListener('mouseenter', () => {
+        quoteHeader.style.background = 'rgba(59, 130, 246, 0.2)';
+    });
+    quoteHeader.addEventListener('mouseleave', () => {
+        quoteHeader.style.background = 'transparent';
+    });
+}
+
+// 知识扩展库
 const knowledgeExpansion = {
-    // 一级 -> 二级
     level2: {
         '量子物理': ['波粒二象性', '海森堡不确定性', '薛定谔方程', '量子纠缠', '量子隧穿'],
         '经典力学': ['牛顿三定律', '万有引力定律', '动量守恒', '能量守恒', '刚体力学'],
@@ -20,24 +84,18 @@ const knowledgeExpansion = {
         '深度学习': ['深度神经网络', '卷积神经网络', '循环神经网络', '生成对抗网络', 'Transformer'],
         '神经网络': ['感知机', '反向传播', '激活函数', '损失函数', '优化器'],
         '哲学': ['形而上学', '认识论', '伦理学', '美学', '逻辑学'],
-        '形而上学': ['本体论', '宇宙论', '自由意志', '决定论', '存在'],
-        '认识论': ['知识定义', '真理理论', '怀疑论', '先验知识', '后验知识'],
-        '伦理学': ['义务论', '功利主义', '美德伦理', '契约论', '元伦理学'],
         '物理学': ['经典物理', '量子物理', '相对论', '热力学', '电磁学'],
-        '心理学': ['认知心理学', '发展心理学', '社会心理学', '临床心理学', '神经心理学']
+        '相对论': ['狭义相对论', '广义相对论', '时间膨胀', '长度收缩', '质能方程']
     },
-    // 二级 -> 三级
     level3: {
-        '机器学习': ['线性回归', '逻辑回归', '决策树', '随机森林', 'KNN', 'K-Means'],
+        '机器学习': ['线性回归', '逻辑回归', '决策树', '随机森林', 'K-Means'],
         '深度学习': ['DNN', 'CNN架构', 'RNN/LSTM', 'GAN原理', '注意力机制'],
-        '神经网络': ['神经元模型', '前向传播', '反向传播算法', '梯度下降', '过拟合'],
-        '薛定谔方程': ['定态薛定谔方程', '含时薛定谔方程', '势阱问题', '谐振子', '氢原子'],
-        '量子纠缠': ['贝尔不等式', 'EPR佯谬', '量子隐形传态', '纠缠态制备', '量子通信'],
-        '牛顿三定律': ['惯性定律', 'F=ma', '作用力反作用力', '惯性系', '非惯性系']
+        '神经网络': ['神经元模型', '前向传播', '反向传播', '梯度下降', '激活函数'],
+        '薛定谔方程': ['定态方程', '含时方程', '势阱问题', '谐振子', '氢原子'],
+        '量子纠缠': ['贝尔不等式', 'EPR佯谬', '量子隐形传态', '纠缠态', '量子通信']
     }
 };
 
-// 分类映射
 const categoryMap = {
     physics: ['物理', '量子', '力学', '相对论', '牛顿', '薛定谔', '电磁'],
     philosophy: ['哲学', '形而上学', '认识论', '伦理', '美学', '逻辑'],
@@ -72,19 +130,12 @@ function updateAllGold() {
     return total;
 }
 
-// 添加节点
 function addNode(label, x, y, parentId = null, level = 1) {
     if (!label || label.trim() === '') return null;
     label = label.trim();
     let existing = nodes.find(n => n.label === label);
     if (existing) return existing;
     
-    const category = getNodeCategory(label);
-    let type = 'gray';
-    if (level === 1) type = 'red';
-    else if (level === 2) type = 'blue';
-    
-    // 根据层级调整位置偏移
     let posX = x || (Math.random() * 400 + 100 + (level * 40));
     let posY = y || (Math.random() * 250 + 100 + (level * 50));
     
@@ -101,7 +152,6 @@ function addNode(label, x, y, parentId = null, level = 1) {
         label: label,
         x: posX,
         y: posY,
-        type: type,
         level: level,
         parentId: parentId,
         childrenIds: [],
@@ -121,12 +171,10 @@ function addNode(label, x, y, parentId = null, level = 1) {
     return newNode;
 }
 
-// 自动扩展子节点（三级联动核心）
 function expandNode(nodeId, level) {
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
     
-    // 如果已有子节点且未展开，则展开
     if (node.childrenIds && node.childrenIds.length > 0) {
         for (let childId of node.childrenIds) {
             const child = nodes.find(n => n.id === childId);
@@ -137,14 +185,13 @@ function expandNode(nodeId, level) {
         return;
     }
     
-    // 生成子节点
     let subs = [];
     if (level === 1) {
         subs = knowledgeExpansion.level2[node.label] || 
-               [`${node.label}基础`, `${node.label}原理`, `${node.label}应用`, `${node.label}发展史`];
+               [`${node.label}基础`, `${node.label}原理`, `${node.label}应用`];
     } else if (level === 2) {
         subs = knowledgeExpansion.level3[node.label] || 
-               [`${node.label}核心概念`, `${node.label}方法论`, `${node.label}实践案例`];
+               [`${node.label}核心概念`, `${node.label}方法论`, `${node.label}案例`];
     }
     
     for (let i = 0; i < subs.length; i++) {
@@ -153,12 +200,10 @@ function expandNode(nodeId, level) {
             addNode(sub, node.x + (i - 2) * 80, node.y + 70, node.id, level + 1);
         }
     }
-    
     node.expanded = true;
     renderAll();
 }
 
-// 收起子节点
 function collapseNode(nodeId) {
     const node = nodes.find(n => n.id === nodeId);
     if (!node || !node.childrenIds) return;
@@ -166,18 +211,16 @@ function collapseNode(nodeId) {
         const child = nodes.find(n => n.id === childId);
         if (child) {
             child.visible = false;
-            collapseNode(childId); // 递归收起
+            collapseNode(childId);
         }
     }
     node.expanded = false;
     renderAll();
 }
 
-// 切换展开/收起
 function toggleExpandNode(nodeId, level) {
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
-    
     if (node.expanded) {
         collapseNode(nodeId);
     } else {
@@ -185,7 +228,6 @@ function toggleExpandNode(nodeId, level) {
     }
 }
 
-// 删除节点
 function deleteNode(nodeId) {
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
@@ -202,7 +244,6 @@ function deleteNode(nodeId) {
     updateFileManager();
 }
 
-// 鼠标悬停高亮路径
 function highlightPath(nodeId) {
     document.querySelectorAll('.node-card').forEach(el => el.classList.remove('path-highlight'));
     document.querySelectorAll('.line-layer line').forEach(line => line.classList.remove('path-highlight'));
@@ -211,7 +252,6 @@ function highlightPath(nodeId) {
     const nodeEl = document.querySelector(`.node-card[data-id='${nodeId}']`);
     if (nodeEl) nodeEl.classList.add('path-highlight');
     
-    // 收集路径上的节点
     const pathIds = new Set();
     let current = nodes.find(n => n.id === nodeId);
     while (current) {
@@ -283,7 +323,7 @@ async function parseFile(file) {
 
 function extractKeywords(text) {
     const stopWords = ['的', '了', '是', '在', '和', '与', '有', '我', '你'];
-    const words = text.split(/[ ,，。！？\n\t、；；:：]+/);
+    const words = text.split(/[ ,，。！？\n\t、；;:：]+/);
     const freq = new Map();
     for (let w of words) {
         if (w.length < 2 || w.length > 10) continue;
@@ -353,33 +393,19 @@ function updateFileManager() {
     let html = '';
     for (let [cat, files] of Object.entries(groups)) {
         html += `<div class="folder-item">
-            <div class="folder-header" onclick="toggleFolder(this)">
+            <div class="folder-header" onclick="window.toggleFolder(this)">
                 <span>📁</span> ${cat} (${files.length}) <span style="margin-left:auto;">▼</span>
             </div>
             <div class="folder-content" style="display:block; margin-left:12px;">`;
         for (let f of files) {
             html += `<div class="file-item">
-                <span class="file-name" onclick="viewFile('${f.id}')">📄 ${f.name.substring(0, 20)}</span>
-                <span class="delete-file-btn" onclick="event.stopPropagation(); deleteFile(${f.id})">🗑️</span>
+                <span class="file-name" onclick="window.viewFile('${f.id}')">📄 ${f.name.substring(0, 20)}</span>
+                <span class="delete-file-btn" onclick="event.stopPropagation(); window.deleteFile(${f.id})">🗑️</span>
             </div>`;
         }
         html += `</div></div>`;
     }
     container.innerHTML = html;
-}
-
-function toggleFolder(header) {
-    const content = header.nextElementSibling;
-    if (content) {
-        const visible = content.style.display !== 'none';
-        content.style.display = visible ? 'none' : 'block';
-        header.querySelector('span:last-child').innerHTML = visible ? '▶' : '▼';
-    }
-}
-
-function viewFile(fileId) {
-    const f = uploadedFiles.find(f => f.id == fileId);
-    if (f) alert(`文件: ${f.name}\n关键词: ${f.keywords.join(', ')}`);
 }
 
 function downloadAllFiles() {
@@ -405,7 +431,7 @@ function renderAll() {
     
     for (let node of visibleNodes) {
         const div = document.createElement('div');
-        div.className = `node-card ${node.type} level${node.level}`;
+        div.className = `node-card level${node.level}`;
         div.innerText = `${node.label} 💰${node.goldValue}`;
         div.style.left = `${node.x}px`;
         div.style.top = `${node.y}px`;
@@ -415,7 +441,10 @@ function renderAll() {
         
         div.addEventListener('click', (e) => {
             e.stopPropagation();
-            toggleExpandNode(node.id, node.level);
+            // 只有非拖拽状态才触发点击展开
+            if (!isDragging) {
+                toggleExpandNode(node.id, node.level);
+            }
         });
         
         div.addEventListener('contextmenu', (e) => {
@@ -427,7 +456,7 @@ function renderAll() {
         div.addEventListener('mouseleave', () => highlightPath(null));
     }
     
-    // 绘制连线
+    // 绘制虚线
     svgLine.innerHTML = '';
     for (let node of visibleNodes) {
         if (node.childrenIds && node.childrenIds.length) {
@@ -473,13 +502,13 @@ function updateNodeListUI() {
 }
 
 function updateRecommendations() {
-    const grayNodes = nodes.filter(n => n.level === 2 && n.type === 'gray');
+    const grayNodes = nodes.filter(n => n.level === 2 && !n.childrenIds?.length);
     const recDiv = document.getElementById('recommendList');
     if (grayNodes.length === 0) {
         recDiv.innerHTML = '🎉 完成探索！';
         return;
     }
-    recDiv.innerHTML = grayNodes.slice(0, 3).map(n => `<div class="recommend-item" onclick="toggleExpandNode(${n.id},2)">📖 ${n.label}</div>`).join('');
+    recDiv.innerHTML = grayNodes.slice(0, 3).map(n => `<div class="recommend-item" onclick="window.toggleExpandNode(${n.id},2)">📖 ${n.label}</div>`).join('');
 }
 
 function searchNode(keyword) {
@@ -489,42 +518,74 @@ function searchNode(keyword) {
         document.getElementById('goldValue').innerText = found.goldValue;
         highlightPath(found.id);
         setTimeout(() => highlightPath(null), 2000);
+    } else {
+        document.getElementById('goldValue').innerText = '0';
     }
 }
 
-// 缩放
 function zoomCanvas(delta) {
     canvasScale = Math.min(2, Math.max(0.4, canvasScale + delta));
     document.getElementById('graphCanvas').style.transform = `scale(${canvasScale})`;
 }
 function resetView() { canvasScale = 1; document.getElementById('graphCanvas').style.transform = 'scale(1)'; }
 
-// 拖拽
+// 拖拽逻辑 - 只有拖动才移动，点击不移动
 function initDrag() {
-    document.addEventListener('mousemove', (e) => {
-        if (dragTarget && isDragging) {
-            const left = e.clientX - dragOffsetX;
-            const top = e.clientY - dragOffsetY;
-            dragTarget.style.left = `${left}px`;
-            dragTarget.style.top = `${top}px`;
-            const nodeId = parseInt(dragTarget.getAttribute('data-id'));
-            const node = nodes.find(n => n.id === nodeId);
-            if (node) { node.x = left; node.y = top; }
-            renderAll();
-        }
-    });
-    document.addEventListener('mouseup', () => { dragTarget = null; isDragging = false; });
+    let dragStartClientX = 0, dragStartClientY = 0;
+    let hasMoved = false;
+    
     document.addEventListener('mousedown', (e) => {
         const node = e.target.closest('.node-card');
-        if (node && !e.ctrlKey) {
-            dragTarget = node;
+        if (!node || e.ctrlKey) return;
+        
+        dragTarget = node;
+        dragStartClientX = e.clientX;
+        dragStartClientY = e.clientY;
+        dragStartLeft = parseInt(node.style.left);
+        dragStartTop = parseInt(node.style.top);
+        hasMoved = false;
+        isDragging = false;
+        
+        node.style.cursor = 'grabbing';
+        e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if (!dragTarget) return;
+        
+        const dx = e.clientX - dragStartClientX;
+        const dy = e.clientY - dragStartClientY;
+        
+        if (!hasMoved && (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold)) {
+            hasMoved = true;
             isDragging = true;
-            const rect = node.getBoundingClientRect();
-            dragOffsetX = e.clientX - rect.left;
-            dragOffsetY = e.clientY - rect.top;
-            node.style.cursor = 'grabbing';
-            e.preventDefault();
+            dragTarget.classList.add('dragging');
         }
+        
+        if (hasMoved) {
+            const newLeft = dragStartLeft + dx;
+            const newTop = dragStartTop + dy;
+            dragTarget.style.left = `${newLeft}px`;
+            dragTarget.style.top = `${newTop}px`;
+            
+            const nodeId = parseInt(dragTarget.getAttribute('data-id'));
+            const node = nodes.find(n => n.id === nodeId);
+            if (node) {
+                node.x = newLeft;
+                node.y = newTop;
+                renderAll();
+            }
+        }
+    });
+    
+    document.addEventListener('mouseup', () => {
+        if (dragTarget) {
+            dragTarget.classList.remove('dragging');
+            dragTarget.style.cursor = '';
+            dragTarget = null;
+        }
+        isDragging = false;
+        hasMoved = false;
     });
 }
 
@@ -532,31 +593,48 @@ function initDrag() {
 function initResize() {
     const handle = document.getElementById('resizeHandle');
     const sidebar = document.getElementById('sidebar');
-    let startX, startWidth;
+    let startX, startWidth, isResizing = false;
     
     handle.addEventListener('mousedown', (e) => {
         startX = e.clientX;
         startWidth = sidebar.offsetWidth;
+        isResizing = true;
         document.body.style.cursor = 'ew-resize';
         e.preventDefault();
     });
     
     document.addEventListener('mousemove', (e) => {
-        if (startX) {
-            const delta = e.clientX - startX;
-            let newWidth = startWidth + delta;
-            newWidth = Math.min(450, Math.max(180, newWidth));
-            sidebar.style.width = newWidth + 'px';
-        }
+        if (!isResizing) return;
+        const delta = e.clientX - startX;
+        let newWidth = startWidth + delta;
+        newWidth = Math.min(450, Math.max(180, newWidth));
+        sidebar.style.width = newWidth + 'px';
     });
     
     document.addEventListener('mouseup', () => {
-        startX = null;
+        isResizing = false;
         document.body.style.cursor = '';
+    });
+    
+    // 触摸屏支持
+    handle.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        startWidth = sidebar.offsetWidth;
+        isResizing = true;
+        e.preventDefault();
+    });
+    document.addEventListener('touchmove', (e) => {
+        if (!isResizing) return;
+        const delta = e.touches[0].clientX - startX;
+        let newWidth = startWidth + delta;
+        newWidth = Math.min(450, Math.max(180, newWidth));
+        sidebar.style.width = newWidth + 'px';
+    });
+    document.addEventListener('touchend', () => {
+        isResizing = false;
     });
 }
 
-// 添加预设
 function addPreset(type) {
     const presets = {
         physics: ['量子物理', '经典力学', '相对论', '热力学'],
@@ -571,7 +649,6 @@ function addPreset(type) {
     renderAll();
 }
 
-// 初始化
 function initDemo() {
     addNode('量子物理', 300, 180, null, 1);
     addNode('经典力学', 550, 180, null, 1);
@@ -620,8 +697,22 @@ fileManagerHeader.addEventListener('click', (e) => {
 initDrag();
 initResize();
 initDemo();
+initQuoteWindow();
+updateDailyQuote();
 
-window.toggleFolder = toggleFolder;
-window.viewFile = viewFile;
+// 暴露全局函数
+window.toggleFolder = function(header) {
+    const content = header.nextElementSibling;
+    if (content) {
+        const visible = content.style.display !== 'none';
+        content.style.display = visible ? 'none' : 'block';
+        const arrow = header.querySelector('span:last-child');
+        if (arrow) arrow.innerHTML = visible ? '▶' : '▼';
+    }
+};
+window.viewFile = function(fileId) {
+    const f = uploadedFiles.find(f => f.id == fileId);
+    if (f) alert(`文件: ${f.name}\n关键词: ${f.keywords.join(', ')}`);
+};
 window.deleteFile = deleteFile;
 window.toggleExpandNode = toggleExpandNode;
