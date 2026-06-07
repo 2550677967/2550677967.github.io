@@ -1,26 +1,26 @@
-// ==================== 深空智能知识图谱 - 旗舰版 ====================
+// ==================== 智能知识图谱 - 层级联动版 ====================
 let nodes = [];
 let nextId = 100;
-let currentZoom = 1;
-let sideZoom = 1;
+let canvasScale = 1;
 let dragTarget = null;
 let dragOffsetX = 0, dragOffsetY = 0;
+let highlightedNodeId = null;
+let expandedLevels = {}; // 记录每个节点展开的层级
 
 // 预设框架显示状态
 let frameworkVisibility = {
     physics: true, philosophy: true, ai: true, history: true, biology: true
 };
 
-// 文件存储系统
-let uploadedFiles = []; // { name, type, content, category, folder }
+let uploadedFiles = [];
 
-// 知识点分类映射
+// 分类映射
 const categoryMap = {
-    physics: ['力学', '量子', '相对论', '牛顿', '伽利略', '万有引力', '运动定律', '电磁', '热力学', '原子', '核', '物理'],
-    philosophy: ['哲学', '笛卡尔', '康德', '柏拉图', '亚里士多德', '存在主义', '理性主义', '认识论', '形而上学', '伦理'],
-    ai: ['AI', '人工智能', '机器学习', '神经网络', '深度学习', '算法', '数据', '大模型', 'GPT', '智能'],
-    history: ['历史', '战争', '朝代', '革命', '古代', '中世纪', '文艺复兴', '帝国', '文明'],
-    biology: ['生物', '基因', 'DNA', '进化', '细胞', '生态', '神经', '大脑', '生命']
+    physics: ['力学', '量子', '相对论', '牛顿', '伽利略', '万有引力', '电磁', '热力学', '原子', '物理'],
+    philosophy: ['哲学', '笛卡尔', '康德', '柏拉图', '亚里士多德', '存在主义', '认识论', '形而上学'],
+    ai: ['AI', '人工智能', '机器学习', '神经网络', '深度学习', '算法', '大模型', 'GPT', '自然语言'],
+    history: ['历史', '战争', '朝代', '革命', '古代', '中世纪', '文艺复兴', '帝国'],
+    biology: ['生物', '基因', 'DNA', '进化', '细胞', '生态', '神经', '大脑']
 };
 
 function getNodeCategory(label) {
@@ -32,11 +32,10 @@ function getNodeCategory(label) {
 
 function calculateGoldValue(node, allNodes) {
     let gold = 50;
-    if (node.childrenIds && node.childrenIds.length > 0) gold += node.childrenIds.length * 25;
-    if (node.parentId) gold += 35;
-    if (node.type === 'red') gold += 120;
-    if (node.type === 'blue') gold += 30;
-    gold += Math.floor(node.label.length / 2);
+    if (node.childrenIds && node.childrenIds.length > 0) gold += node.childrenIds.length * 20;
+    if (node.parentId) gold += 30;
+    if (node.type === 'red') gold += 100;
+    if (node.type === 'blue') gold += 20;
     return Math.min(gold, 999);
 }
 
@@ -46,31 +45,32 @@ function updateAllGold() {
         node.goldValue = calculateGoldValue(node, nodes);
         total += node.goldValue;
     }
-    document.getElementById('totalGold').innerHTML = `💰 总金币: ${total}`;
+    document.getElementById('totalGold').innerHTML = `💰 ${total}`;
     return total;
 }
 
 // 添加节点
-function addNode(label, x, y, parentId = null, typeOverride = null) {
+function addNode(label, x, y, parentId = null, typeOverride = null, level = 1) {
     if (!label || label.trim() === '') return null;
     label = label.trim();
     let existing = nodes.find(n => n.label === label);
     if (existing) return existing;
     
     const category = getNodeCategory(label);
-    let type = typeOverride || (category !== 'other' ? 'red' : 'gray');
+    let type = typeOverride || (category !== 'other' ? 'red' : (level === 1 ? 'red' : 'gray'));
     
     const newNode = {
         id: nextId++,
         label: label,
-        x: x || (Math.random() * 500 + 100),
-        y: y || (Math.random() * 300 + 100),
+        x: x || (Math.random() * 400 + 100 + (level * 50)),
+        y: y || (Math.random() * 300 + 100 + (level * 30)),
         type: type,
         parentId: parentId,
         childrenIds: [],
         goldValue: 0,
-        sourceFile: null,
-        visible: true
+        level: level,
+        visible: true,
+        expanded: false
     };
     newNode.goldValue = calculateGoldValue(newNode, nodes);
     nodes.push(newNode);
@@ -80,32 +80,20 @@ function addNode(label, x, y, parentId = null, typeOverride = null) {
         if (parent && !parent.childrenIds.includes(newNode.id)) {
             parent.childrenIds.push(newNode.id);
         }
-    } else {
-        autoConnectNode(newNode);
     }
     return newNode;
-}
-
-// 自动连线
-function autoConnectNode(newNode) {
-    for (let node of nodes) {
-        if (node.id === newNode.id) continue;
-        if (node.label.includes(newNode.label) || newNode.label.includes(node.label)) {
-            if (!newNode.parentId && !node.childrenIds.includes(newNode.id)) {
-                if (!node.childrenIds) node.childrenIds = [];
-                node.childrenIds.push(newNode.id);
-                newNode.parentId = node.id;
-                break;
-            }
-        }
-    }
 }
 
 // 删除节点
 function deleteNode(nodeId) {
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
-    // 清除所有子节点引用
+    // 递归删除子节点
+    if (node.childrenIds && node.childrenIds.length > 0) {
+        for (let childId of node.childrenIds) {
+            deleteNode(childId);
+        }
+    }
     for (let n of nodes) {
         if (n.childrenIds) {
             n.childrenIds = n.childrenIds.filter(id => id !== nodeId);
@@ -116,12 +104,121 @@ function deleteNode(nodeId) {
     updateFileManager();
 }
 
+// 展开节点层级（点击大图标展示子节点）
+function toggleExpandNode(nodeId) {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+    
+    // 如果没有子节点，自动生成子节点
+    if (!node.childrenIds || node.childrenIds.length === 0) {
+        generateChildrenForNode(node);
+    }
+    
+    node.expanded = !node.expanded;
+    
+    // 显示或隐藏子节点
+    if (node.childrenIds) {
+        for (let childId of node.childrenIds) {
+            const child = nodes.find(n => n.id === childId);
+            if (child) {
+                child.visible = node.expanded;
+            }
+        }
+    }
+    renderAll();
+}
+
+// 为节点生成子节点
+function generateChildrenForNode(parent) {
+    const subTopics = {
+        '量子物理': ['波粒二象性', '海森堡不确定性', '薛定谔方程', '量子纠缠', '量子隧穿'],
+        '经典力学': ['牛顿三定律', '万有引力定律', '动量守恒', '能量守恒', '刚体力学'],
+        '人工智能': ['机器学习', '深度学习', '自然语言处理', '计算机视觉', '强化学习'],
+        '机器学习': ['监督学习', '无监督学习', '强化学习', '决策树', '神经网络'],
+        '神经网络': ['感知机', '反向传播', 'CNN', 'RNN', 'Transformer'],
+        '深度学习': ['深度神经网络', '卷积神经网络', '循环神经网络', '生成对抗网络', '自编码器'],
+        '哲学': ['形而上学', '认识论', '伦理学', '美学', '逻辑学'],
+        '物理学': ['经典物理', '量子物理', '相对论', '热力学', '电磁学']
+    };
+    
+    let subs = subTopics[parent.label];
+    if (!subs) {
+        subs = [`${parent.label}原理`, `${parent.label}应用`, `${parent.label}发展史`, `${parent.label}核心概念`];
+    }
+    
+    for (let i = 0; i < subs.length; i++) {
+        const sub = subs[i];
+        if (!nodes.some(n => n.label === sub)) {
+            const offsetX = (i - 2) * 100;
+            const offsetY = 80;
+            addNode(sub, parent.x + offsetX, parent.y + offsetY, parent.id, 'sub', parent.level + 1);
+        }
+    }
+}
+
+// 鼠标悬停高亮路径
+function highlightPath(nodeId) {
+    // 清除之前的高亮
+    document.querySelectorAll('.node-card').forEach(el => {
+        el.classList.remove('path-highlight', 'highlight');
+    });
+    document.querySelectorAll('.line-layer line').forEach(line => {
+        line.classList.remove('path-highlight');
+    });
+    
+    if (!nodeId) return;
+    
+    // 高亮节点本身
+    const nodeEl = document.querySelector(`.node-card[data-id='${nodeId}']`);
+    if (nodeEl) nodeEl.classList.add('path-highlight');
+    
+    // 收集路径上的所有节点ID
+    const pathIds = new Set();
+    let current = nodes.find(n => n.id === nodeId);
+    while (current) {
+        pathIds.add(current.id);
+        if (current.parentId) {
+            current = nodes.find(n => n.id === current.parentId);
+        } else {
+            break;
+        }
+    }
+    
+    // 添加所有子节点
+    function addChildren(id) {
+        const node = nodes.find(n => n.id === id);
+        if (node && node.childrenIds) {
+            for (let childId of node.childrenIds) {
+                pathIds.add(childId);
+                addChildren(childId);
+            }
+        }
+    }
+    addChildren(nodeId);
+    
+    // 高亮路径上的节点
+    for (let id of pathIds) {
+        const el = document.querySelector(`.node-card[data-id='${id}']`);
+        if (el) el.classList.add('path-highlight');
+    }
+    
+    // 高亮路径上的连线
+    for (let node of nodes) {
+        if (node.childrenIds) {
+            for (let childId of node.childrenIds) {
+                if (pathIds.has(node.id) && pathIds.has(childId)) {
+                    const line = document.querySelector(`.line-layer line[data-from='${node.id}'][data-to='${childId}']`);
+                    if (line) line.classList.add('path-highlight');
+                }
+            }
+        }
+    }
+}
+
 // 文件解析
 async function parseFile(file) {
     const fileType = file.type;
-    const fileName = file.name;
     let extractedText = '';
-    
     try {
         if (fileType.startsWith('image/')) {
             const { data: { text } } = await Tesseract.recognize(file, 'chi_sim+eng');
@@ -129,7 +226,7 @@ async function parseFile(file) {
         } else if (fileType === 'application/pdf') {
             const arrayBuffer = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
+            for (let i = 1; i <= Math.min(pdf.numPages, 3); i++) {
                 const page = await pdf.getPage(i);
                 const textContent = await page.getTextContent();
                 extractedText += textContent.items.map(item => item.str).join(' ') + '\n';
@@ -138,39 +235,36 @@ async function parseFile(file) {
             const arrayBuffer = await file.arrayBuffer();
             const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
             extractedText = result.value;
-        } else if (fileType.includes('sheet') || fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+        } else if (fileType.includes('sheet') || file.name.endsWith('.xlsx')) {
             const arrayBuffer = await file.arrayBuffer();
             const workbook = XLSX.read(arrayBuffer);
             workbook.SheetNames.forEach(sheet => {
-                const worksheet = workbook.Sheets[sheet];
-                const json = XLSX.utils.sheet_to_json(worksheet);
+                const json = XLSX.utils.sheet_to_json(workbook.Sheets[sheet]);
                 extractedText += JSON.stringify(json) + '\n';
             });
-        } else if (fileType === 'text/plain' || fileName.endsWith('.txt')) {
+        } else if (file.name.endsWith('.txt')) {
             extractedText = await file.text();
         }
     } catch (err) {
-        console.error('解析失败:', err);
         return null;
     }
-    return { text: extractedText, fileName: fileName };
+    return { text: extractedText, fileName: file.name };
 }
 
 function extractKeywords(text) {
-    const stopWords = ['的', '了', '是', '在', '和', '与', '有', '我', '你', '他', '她'];
+    const stopWords = ['的', '了', '是', '在', '和', '与', '有', '我', '你'];
     const words = text.split(/[ ,，。！？\n\t、；;：""''（）【】《》]+/);
     const keywordMap = new Map();
     for (let word of words) {
-        if (word.length < 2 || word.length > 15) continue;
+        if (word.length < 2 || word.length > 12) continue;
         if (stopWords.includes(word)) continue;
         if (/^[0-9]+$/.test(word)) continue;
         keywordMap.set(word, (keywordMap.get(word) || 0) + 1);
     }
     const sorted = [...keywordMap.entries()].sort((a, b) => b[1] - a[1]);
-    return sorted.slice(0, 6).map(k => k[0]);
+    return sorted.slice(0, 5).map(k => k[0]);
 }
 
-// 处理文件上传
 async function processFile(file) {
     const progressDiv = document.getElementById('uploadProgress');
     const resultDiv = document.getElementById('uploadResult');
@@ -186,19 +280,18 @@ async function processFile(file) {
     }
     
     const keywords = extractKeywords(parsed.text);
-    // 确定分类
     let category = 'other';
-    for (let [cat, keywords_list] of Object.entries(categoryMap)) {
-        if (keywords.some(kw => keywords_list.includes(kw))) {
+    for (let [cat, kwList] of Object.entries(categoryMap)) {
+        if (keywords.some(kw => kwList.includes(kw))) {
             category = cat;
             break;
         }
     }
     
-    // 存储文件
     uploadedFiles.push({
+        id: Date.now() + Math.random(),
         name: parsed.fileName,
-        content: parsed.text.substring(0, 500),
+        content: parsed.text.substring(0, 300),
         category: category,
         keywords: keywords,
         timestamp: Date.now()
@@ -207,15 +300,20 @@ async function processFile(file) {
     if (keywords.length > 0) {
         for (let kw of keywords) {
             if (!nodes.some(n => n.label === kw)) {
-                const newNode = addNode(kw, undefined, undefined);
-                if (newNode) newNode.type = 'blue';
+                addNode(kw, undefined, undefined);
             }
         }
-        resultDiv.innerHTML = `✅ ${file.name}<br>📌 提取: ${keywords.join(', ')}<br>📁 归类: ${category || '通用'}`;
+        resultDiv.innerHTML = `✅ ${file.name}<br>📌 提取: ${keywords.join(', ')}`;
         renderAll();
         updateRecommendations();
         updateFileManager();
     }
+}
+
+// 删除文件
+function deleteFile(fileId) {
+    uploadedFiles = uploadedFiles.filter(f => f.id !== fileId);
+    updateFileManager();
 }
 
 // 更新文件管理器
@@ -223,7 +321,6 @@ function updateFileManager() {
     const container = document.getElementById('fileManagerContent');
     if (!container) return;
     
-    // 按分类分组
     const groups = {};
     for (let file of uploadedFiles) {
         const cat = file.category || '未分类';
@@ -241,14 +338,17 @@ function updateFileManager() {
         const folderIcon = cat === 'physics' ? '⚛️' : (cat === 'philosophy' ? '📜' : (cat === 'ai' ? '🤖' : (cat === 'history' ? '🏛️' : '📁')));
         html += `<div class="folder-item">
             <div class="folder-header" onclick="toggleFolder(this)">
-                <span>${folderIcon}</span> <strong>${cat}</strong> <span style="font-size:0.6rem;">(${files.length})</span>
+                <span>${folderIcon}</span> <strong>${cat}</strong> <span>(${files.length})</span>
                 <span style="margin-left:auto;">▼</span>
             </div>
-            <div class="folder-content" style="display:block; margin-left:16px;">`;
+            <div class="folder-content" style="display:block; margin-left:12px;">`;
         for (let file of files) {
             html += `<div class="file-item">
-                <span class="file-name" onclick="viewFileContent('${file.name.replace(/'/g, "\\'")}')">📄 ${file.name}</span>
-                <span style="font-size:0.6rem;">💰${file.keywords.length * 10}</span>
+                <span class="file-name" onclick="viewFileContent('${file.id}')">📄 ${file.name.substring(0, 25)}</span>
+                <div style="display:flex; gap:4px;">
+                    <span style="font-size:0.55rem;">💰${file.keywords.length * 10}</span>
+                    <span class="delete-file-btn" onclick="event.stopPropagation(); deleteFile(${file.id})">🗑️</span>
+                </div>
             </div>`;
         }
         html += `</div></div>`;
@@ -265,14 +365,13 @@ function toggleFolder(header) {
     }
 }
 
-function viewFileContent(fileName) {
-    const file = uploadedFiles.find(f => f.name === fileName);
+function viewFileContent(fileId) {
+    const file = uploadedFiles.find(f => f.id == fileId);
     if (file) {
         alert(`文件: ${file.name}\n提取关键词: ${file.keywords.join(', ')}\n内容预览:\n${file.content}`);
     }
 }
 
-// 下载所有文件
 function downloadAllFiles() {
     const zip = new JSZip();
     for (let file of uploadedFiles) {
@@ -287,7 +386,7 @@ function downloadAllFiles() {
     });
 }
 
-// 渲染图谱（只显示可见节点）
+// 渲染图谱
 function renderAll() {
     const canvas = document.getElementById('graphCanvas');
     const svgLine = document.getElementById('lineSvg');
@@ -297,30 +396,37 @@ function renderAll() {
     
     for (let node of visibleNodes) {
         const div = document.createElement('div');
-        div.className = `node-card ${node.type}`;
+        const levelClass = node.level > 1 ? 'sub' : '';
+        div.className = `node-card ${node.type} ${levelClass}`;
         div.innerText = `${node.label} 💰${node.goldValue}`;
         div.style.left = `${node.x}px`;
         div.style.top = `${node.y}px`;
         div.setAttribute('data-id', node.id);
+        div.setAttribute('data-level', node.level);
         canvas.appendChild(div);
         
+        // 点击事件 - 展开/收起层级
         div.addEventListener('click', (e) => {
             e.stopPropagation();
-            document.getElementById('searchKeyword').value = node.label;
-            searchNodeAndShowGold(node.label);
+            if (node.type === 'red' || node.childrenIds.length > 0) {
+                toggleExpandNode(node.id);
+            }
         });
         
         // 右键删除
         div.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            e.stopPropagation();
-            if (confirm(`删除知识点 "${node.label}"？`)) {
+            if (confirm(`删除 "${node.label}"？`)) {
                 deleteNode(node.id);
             }
         });
+        
+        // 鼠标悬停高亮路径
+        div.addEventListener('mouseenter', () => highlightPath(node.id));
+        div.addEventListener('mouseleave', () => highlightPath(null));
     }
     
-    // 绘制虚线
+    // 绘制连线
     svgLine.innerHTML = '';
     for (let node of visibleNodes) {
         if (node.childrenIds && node.childrenIds.length) {
@@ -343,6 +449,8 @@ function renderAll() {
                         line.setAttribute('y1', startY);
                         line.setAttribute('x2', endX);
                         line.setAttribute('y2', endY);
+                        line.setAttribute('data-from', node.id);
+                        line.setAttribute('data-to', childId);
                         svgLine.appendChild(line);
                     }
                 }
@@ -354,28 +462,28 @@ function renderAll() {
     updateNodeListUI();
 }
 
-// 更新节点列表
 function updateNodeListUI() {
     const listContainer = document.getElementById('nodeListUl');
     listContainer.innerHTML = '';
-    nodes.forEach(node => {
+    nodes.slice(0, 20).forEach(node => {
         const li = document.createElement('li');
         li.style.borderLeftColor = node.type === 'red' ? '#ef4444' : (node.type === 'blue' ? '#3b82f6' : '#6b7280');
-        li.innerHTML = `<span>${node.label}</span><span style="color:#eab308;">💰${node.goldValue}</span>`;
+        li.innerHTML = `<span>${node.label}</span><span>💰${node.goldValue}</span>`;
         li.addEventListener('click', () => {
             document.getElementById('searchKeyword').value = node.label;
             searchNodeAndShowGold(node.label);
+            highlightPath(node.id);
+            setTimeout(() => highlightPath(null), 2000);
         });
         listContainer.appendChild(li);
     });
 }
 
-// 推荐学习
 async function updateRecommendations() {
     const grayNodes = nodes.filter(n => n.type === 'gray');
     const recDiv = document.getElementById('recommendList');
     if (grayNodes.length === 0) {
-        recDiv.innerHTML = '🎉 宇宙探索完毕！';
+        recDiv.innerHTML = '🎉 探索完毕！';
         return;
     }
     const top3 = grayNodes.slice(0, 3);
@@ -383,23 +491,11 @@ async function updateRecommendations() {
     for (let node of top3) {
         const item = document.createElement('div');
         item.className = 'recommend-item';
-        item.innerHTML = `
-            <div style="display:flex; justify-content:space-between;">
-                <span>📖 ${node.label} (💰${node.goldValue})</span>
-                <span style="font-size:0.6rem;">🔍 搜网页</span>
-            </div>
-            <div class="web-links" style="margin-top:4px;"></div>
-        `;
-        item.addEventListener('click', async (e) => {
-            if (e.target.tagName === 'A') return;
-            const linksDiv = item.querySelector('.web-links');
-            if (linksDiv.innerHTML) { linksDiv.innerHTML = ''; return; }
-            linksDiv.innerHTML = '<span style="color:#eab308;">🔍 检索中...</span>';
-            const urls = [
-                `https://baike.baidu.com/item/${encodeURIComponent(node.label)}`,
-                `https://zh.wikipedia.org/wiki/${encodeURIComponent(node.label)}`
-            ];
-            linksDiv.innerHTML = urls.map(url => `<a href="${url}" target="_blank" style="display:block; font-size:0.6rem;">🔗 ${url.split('/')[2]}</a>`).join('');
+        item.innerHTML = `<span>📖 ${node.label} (💰${node.goldValue})</span>`;
+        item.addEventListener('click', () => {
+            document.getElementById('searchKeyword').value = node.label;
+            searchNodeAndShowGold(node.label);
+            highlightPath(node.id);
         });
         recDiv.appendChild(item);
     }
@@ -410,46 +506,56 @@ function searchNodeAndShowGold(keyword) {
     const found = nodes.find(n => n.label.toLowerCase().includes(keyword.toLowerCase()));
     if (found) {
         document.getElementById('goldValue').innerText = found.goldValue;
-        const el = document.querySelector(`.node-card[data-id='${found.id}']`);
-        if (el) { el.style.transform = 'scale(1.05)'; setTimeout(() => el.style.transform = '', 300); }
+        highlightPath(found.id);
+        setTimeout(() => highlightPath(null), 2000);
     } else {
         document.getElementById('goldValue').innerText = '0';
     }
 }
 
-// 缩放功能
-let canvasScale = 1;
+// 缩放
 function zoomCanvas(delta) {
-    canvasScale = Math.min(2.5, Math.max(0.4, canvasScale + delta));
+    canvasScale = Math.min(2, Math.max(0.5, canvasScale + delta));
     document.getElementById('graphCanvas').style.transform = `scale(${canvasScale})`;
-}
-function zoomSidebar(delta) {
-    sideZoom = Math.min(1.5, Math.max(0.6, sideZoom + delta));
-    document.getElementById('sidebar').style.transform = `scale(${sideZoom})`;
-    document.getElementById('sidebar').style.transformOrigin = 'top left';
 }
 function resetView() { canvasScale = 1; document.getElementById('graphCanvas').style.transform = 'scale(1)'; }
 
-// 预设框架切换显示
-function toggleFramework(path, btn) {
-    frameworkVisibility[path] = !frameworkVisibility[path];
-    if (btn) btn.classList.toggle('hidden-framework');
-    // 显示/隐藏对应类别的节点
-    for (let node of nodes) {
-        const nodeCat = getNodeCategory(node.label);
-        if (nodeCat === path) {
-            node.visible = frameworkVisibility[path];
+// 拖拽逻辑
+function initDrag() {
+    let isDragging = false;
+    document.addEventListener('mousemove', (e) => {
+        if (dragTarget && isDragging) {
+            const left = e.clientX - dragOffsetX;
+            const top = e.clientY - dragOffsetY;
+            dragTarget.style.left = `${left}px`;
+            dragTarget.style.top = `${top}px`;
+            const nodeId = parseInt(dragTarget.getAttribute('data-id'));
+            const node = nodes.find(n => n.id === nodeId);
+            if (node) { node.x = left; node.y = top; }
+            renderAll();
         }
-    }
-    renderAll();
+    });
+    document.addEventListener('mouseup', () => { dragTarget = null; isDragging = false; });
+    document.addEventListener('mousedown', (e) => {
+        const node = e.target.closest('.node-card');
+        if (node && !e.ctrlKey) {
+            dragTarget = node;
+            isDragging = true;
+            const rect = node.getBoundingClientRect();
+            dragOffsetX = e.clientX - rect.left;
+            dragOffsetY = e.clientY - rect.top;
+            node.style.cursor = 'grabbing';
+            e.preventDefault();
+        }
+    });
 }
 
-// 添加预设框架
+// 添加预设
 function addPresetFramework(type) {
     const presets = {
-        physics: ['力学', '热力学', '电磁学', '量子力学', '相对论'],
-        philosophy: ['形而上学', '认识论', '伦理学', '美学', '逻辑学'],
-        ai: ['机器学习', '神经网络', '自然语言处理', '计算机视觉', '强化学习'],
+        physics: ['量子物理', '经典力学', '相对论', '热力学'],
+        philosophy: ['形而上学', '认识论', '伦理学', '美学'],
+        ai: ['人工智能', '机器学习', '神经网络', '深度学习'],
         history: ['古代史', '中世纪史', '近代史', '现代史'],
         biology: ['细胞生物学', '遗传学', '进化论', '神经科学']
     };
@@ -464,63 +570,23 @@ function addPresetFramework(type) {
     }
 }
 
-// 拖拽逻辑
-function initDrag() {
-    let isDraggingNode = false;
-    document.addEventListener('mousemove', (e) => {
-        if (dragTarget && isDraggingNode) {
-            const left = e.clientX - dragOffsetX;
-            const top = e.clientY - dragOffsetY;
-            dragTarget.style.left = `${left}px`;
-            dragTarget.style.top = `${top}px`;
-            const nodeId = parseInt(dragTarget.getAttribute('data-id'));
-            const node = nodes.find(n => n.id === nodeId);
-            if (node) { node.x = left; node.y = top; }
-            renderAll();
+function toggleFramework(path, btn) {
+    frameworkVisibility[path] = !frameworkVisibility[path];
+    if (btn) btn.classList.toggle('hidden-framework');
+    for (let node of nodes) {
+        if (getNodeCategory(node.label) === path) {
+            node.visible = frameworkVisibility[path];
         }
-    });
-    document.addEventListener('mouseup', () => { dragTarget = null; isDraggingNode = false; });
-    document.addEventListener('mousedown', (e) => {
-        const node = e.target.closest('.node-card');
-        if (node) {
-            dragTarget = node;
-            isDraggingNode = true;
-            const rect = node.getBoundingClientRect();
-            dragOffsetX = e.clientX - rect.left;
-            dragOffsetY = e.clientY - rect.top;
-            node.style.cursor = 'grabbing';
-            e.preventDefault();
-        }
-    });
-}
-
-// 滚轮缩放支持
-function initWheelZoom() {
-    const canvasContainer = document.getElementById('canvasContainer');
-    const sidebar = document.getElementById('sidebar');
-    
-    canvasContainer.addEventListener('wheel', (e) => {
-        if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            zoomCanvas(e.deltaY > 0 ? -0.05 : 0.05);
-        }
-    }, { passive: false });
-    
-    sidebar.addEventListener('wheel', (e) => {
-        if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            zoomSidebar(e.deltaY > 0 ? -0.05 : 0.05);
-        }
-    }, { passive: false });
+    }
+    renderAll();
 }
 
 // 初始化
 function initDemo() {
-    addNode('量子物理', 200, 150, null, 'red');
-    addNode('经典力学', 400, 200, null, 'red');
-    addNode('人工智能', 350, 350, null, 'red');
-    addNode('薛定谔方程', 150, 280, null, 'gray');
-    addNode('神经网络', 500, 400, null, 'gray');
+    addNode('量子物理', 300, 200, null, 'red', 1);
+    addNode('经典力学', 550, 200, null, 'red', 1);
+    addNode('人工智能', 420, 400, null, 'red', 1);
+    addNode('哲学', 180, 350, null, 'red', 1);
     renderAll();
 }
 
@@ -534,11 +600,11 @@ document.getElementById('addKeywordBtn').addEventListener('click', () => {
 document.getElementById('zoomInBtn').addEventListener('click', () => zoomCanvas(0.1));
 document.getElementById('zoomOutBtn').addEventListener('click', () => zoomCanvas(-0.1));
 document.getElementById('resetViewBtn').addEventListener('click', resetView);
-document.getElementById('clearAllBtn').addEventListener('click', () => { nodes = []; nextId = 100; renderAll(); updateFileManager(); });
+document.getElementById('clearAllBtn').addEventListener('click', () => { nodes = []; nextId = 100; renderAll(); });
 document.getElementById('searchKeyword').addEventListener('input', (e) => searchNodeAndShowGold(e.target.value));
 document.getElementById('downloadAllFilesBtn').addEventListener('click', downloadAllFiles);
 
-// 文件管理器展开/收起
+// 文件管理器展开
 const fileManagerHeader = document.getElementById('fileManagerHeader');
 const fileManagerContent = document.getElementById('fileManagerContent');
 if (fileManagerHeader) {
@@ -550,7 +616,6 @@ if (fileManagerHeader) {
     });
 }
 
-// 预设框架按钮
 document.querySelectorAll('.preset-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -571,24 +636,14 @@ uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.
 uploadArea.addEventListener('dragleave', () => uploadArea.style.borderColor = 'rgba(59,130,246,0.5)');
 uploadArea.addEventListener('drop', (e) => {
     e.preventDefault();
-    const files = e.dataTransfer.files;
-    for (let file of files) processFile(file);
+    for (let file of e.dataTransfer.files) processFile(file);
 });
 fileInput.addEventListener('change', (e) => { for (let file of e.target.files) processFile(file); });
 
 initDrag();
-initWheelZoom();
 initDemo();
 
-// 触摸屏支持
-let touchStartZoom = 0;
-document.getElementById('canvasContainer').addEventListener('touchstart', (e) => {
-    if (e.touches.length === 2) {
-        touchStartZoom = canvasScale;
-    }
-});
-document.getElementById('canvasContainer').addEventListener('touchmove', (e) => {
-    if (e.touches.length === 2) {
-        e.preventDefault();
-    }
-});
+// 暴露全局函数
+window.toggleFolder = toggleFolder;
+window.viewFileContent = viewFileContent;
+window.deleteFile = deleteFile;
