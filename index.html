@@ -3,49 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>知识图谱·学习成长线 | 个人知识库</title>
+    <title>智能知识图谱 | AI学习助手</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Tesseract.js OCR 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
     <div class="app-container">
         <!-- 左侧控制面板 -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h1>📚 知识图谱</h1>
-                <p class="subtitle">—— 构建你的学习成长线</p>
+                <h1>🧠 智能知识图谱</h1>
+                <p class="subtitle">AI识别笔记 · 金币驱动成长</p>
             </div>
             
-            <!-- 学习进度关键词输入 -->
+            <!-- ===== 新增：图片上传OCR区域 ===== -->
+            <div class="upload-section">
+                <label>📸 上传图片识别文字笔记</label>
+                <div class="upload-area" id="uploadArea">
+                    <span>📤 点击或拖拽图片至此</span>
+                    <input type="file" id="imageUpload" accept="image/*" hidden>
+                </div>
+                <div id="ocrProgress" class="ocr-progress" style="display:none">
+                    <div class="progress-bar"></div>
+                    <span>识别中...</span>
+                </div>
+                <div id="ocrResult" class="ocr-result"></div>
+            </div>
+
+            <!-- 手动添加知识点 -->
             <div class="input-section">
-                <label>🎯 当前学习关键词 / 进度</label>
+                <label>✏️ 手动添加知识点</label>
                 <div class="keyword-input-group">
-                    <input type="text" id="keywordInput" placeholder="例如: 力学, 天文学, 日心说, 笛卡尔..." value="伽利略,日心说,力学,笛卡尔">
-                    <button id="addKeywordBtn">➕ 添加节点</button>
+                    <input type="text" id="keywordInput" placeholder="例如: 量子力学, 存在主义...">
+                    <button id="addKeywordBtn">➕ 添加</button>
                 </div>
-                <small>💡 输入关键词后点击添加，会在画布上生成可拖拽的知识节点</small>
             </div>
 
-            <!-- 学习成长线预设 -->
+            <!-- 预设学习路径 -->
             <div class="preset-section">
-                <label>🧠 预设学习路径</label>
+                <label>🎯 预设知识框架</label>
                 <div class="preset-buttons">
-                    <button class="preset-btn" data-path="physics">物理史路径</button>
-                    <button class="preset-btn" data-path="philosophy">哲学认知路径</button>
-                    <button class="preset-btn" data-path="ai">AI与未来路径</button>
+                    <button class="preset-btn" data-path="physics">🔴 物理学</button>
+                    <button class="preset-btn" data-path="philosophy">🔴 哲学</button>
+                    <button class="preset-btn" data-path="ai">🔴 人工智能</button>
+                    <button class="preset-btn" data-path="history">🔴 历史</button>
                 </div>
             </div>
 
-            <!-- 节点列表 + 层级展示 -->
+            <!-- 节点列表 -->
             <div class="node-list-panel">
-                <h3>📌 知识节点列表</h3>
+                <h3>📚 知识节点列表</h3>
+                <div class="legend-compact">
+                    <span><span class="color-dot red"></span>核心大类</span>
+                    <span><span class="color-dot blue"></span>已掌握</span>
+                    <span><span class="color-dot gray"></span>待学习</span>
+                </div>
                 <ul id="nodeListUl"></ul>
             </div>
 
-            <div class="legend">
-                <div><span class="legend-dot primary"></span> 主节点/学习主线</div>
-                <div><span class="legend-dot child"></span> 子层级/关联知识</div>
-                <div><span class="legend-dot learning"></span> 当前学习焦点</div>
-                <div>💡 拖拽节点 · 点击展开层级</div>
+            <!-- 学习推荐 -->
+            <div class="recommend-section">
+                <h3>💡 推荐学习</h3>
+                <div id="recommendList" class="recommend-list"></div>
             </div>
         </div>
 
@@ -53,16 +73,26 @@
         <div class="canvas-container">
             <div class="toolbar">
                 <button id="resetViewBtn">🔄 重置视图</button>
-                <button id="clearAllBtn">🗑️ 清空所有节点</button>
-                <span id="nodeCount">节点数: 0</span>
+                <button id="clearAllBtn">🗑️ 清空所有</button>
+                <span id="totalGold">💰 总金币: 0</span>
             </div>
             <svg id="lineSvg" class="line-layer"></svg>
             <div id="graphCanvas" class="graph-canvas"></div>
         </div>
     </div>
 
-    <!-- 引入依赖库 -->
-    <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.17/dist/interact.min.js"></script>
+    <!-- 底部搜索/金币展示栏 -->
+    <div class="footer-search">
+        <div class="search-wrapper">
+            <input type="text" id="searchKeyword" placeholder="🔍 搜索知识点，查看金币价值...">
+            <div id="goldDisplay" class="gold-display">
+                <span class="gold-icon">💰</span>
+                <span id="goldValue">0</span>
+                <span class="gold-label">知识金币</span>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
