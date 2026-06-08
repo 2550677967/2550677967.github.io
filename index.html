@@ -2,100 +2,408 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>智能知识图谱 | AI学习助手 - 三级联动版</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.4.2/mammoth.browser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>智能知识图谱 | AI学习助手 - 充电进度版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0a0a1a;
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* ========= 左侧边栏 ========= */
+        .sidebar {
+            width: 280px;
+            background: rgba(15, 15, 35, 0.95);
+            border-right: 1px solid #3b82f6;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 16px;
+            z-index: 10;
+        }
+
+        .sidebar h1 {
+            font-size: 1.3rem;
+            margin-bottom: 4px;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .sidebar .subtitle {
+            font-size: 0.7rem;
+            color: #8b9dc3;
+            margin-bottom: 20px;
+        }
+
+        /* 上传区域 */
+        .upload-area {
+            border: 2px dashed #3b82f6;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 16px;
+            background: rgba(59,130,246,0.1);
+            transition: all 0.2s;
+        }
+        .upload-area:hover {
+            background: rgba(59,130,246,0.2);
+            border-color: #60a5fa;
+        }
+        .upload-icon { font-size: 1.5rem; display: block; }
+
+        .upload-result {
+            font-size: 0.65rem;
+            color: #8b9dc3;
+            margin: 8px 0;
+            padding: 6px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            max-height: 60px;
+            overflow-y: auto;
+        }
+
+        /* 文件管理器 */
+        .file-manager {
+            margin-bottom: 16px;
+        }
+        .file-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 6px 0;
+        }
+        .file-header h3 { font-size: 0.8rem; color: #93c5fd; }
+        .file-content { max-height: 100px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 6px; margin-top: 4px; }
+        .file-item { font-size: 0.6rem; padding: 3px 6px; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .delete-file { background: rgba(239,68,68,0.5); padding: 0 6px; border-radius: 10px; cursor: pointer; font-size: 0.5rem; }
+
+        button {
+            background: #3b82f6;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.7rem;
+            margin: 2px;
+        }
+        button:hover { background: #2563eb; }
+
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 12px 0;
+        }
+        .preset-btn { background: rgba(59,130,246,0.3); font-size: 0.65rem; }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .input-group input {
+            flex: 1;
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: none;
+            background: rgba(30,30,60,0.8);
+            color: white;
+            outline: none;
+        }
+
+        .node-list {
+            margin-top: 16px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .node-list li {
+            background: rgba(30,30,60,0.5);
+            padding: 6px 10px;
+            border-radius: 20px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            list-style: none;
+            font-size: 0.7rem;
+            border-left: 3px solid;
+        }
+        .node-hint { font-size: 0.55rem; color: #6b7280; margin-top: 8px; text-align: center; }
+
+        /* 推荐学习区域 */
+        .recommend-section {
+            margin-top: 16px;
+            padding: 10px;
+            background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(168,85,247,0.05));
+            border-radius: 12px;
+        }
+        .recommend-section h3 { font-size: 0.7rem; color: #eab308; margin-bottom: 6px; }
+        .recommend-list { font-size: 0.6rem; max-height: 80px; overflow-y: auto; }
+        .recommend-item { padding: 4px; margin-bottom: 3px; background: rgba(0,0,0,0.3); border-radius: 6px; cursor: pointer; }
+
+        /* ========= 右侧画布 ========= */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(ellipse at center, #0f0f23 0%, #05050a 100%);
+            overflow: hidden;
+        }
+
+        /* 每日语录窗口 - 固定在右上角 */
+        .quote-window {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 25;
+            background: rgba(15, 15, 35, 0.95);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            border: 1px solid rgba(234, 179, 8, 0.4);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            cursor: pointer;
+            max-width: 280px;
+            min-width: 180px;
+        }
+        .quote-window.collapsed .quote-content { display: none; }
+        .quote-window.collapsed .quote-toggle { transform: rotate(-90deg); }
+        .quote-header {
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 16px;
+        }
+        .quote-header:hover { background: rgba(234, 179, 8, 0.15); }
+        .quote-icon { font-size: 0.9rem; }
+        .quote-title { font-size: 0.7rem; font-weight: 500; color: #eab308; flex: 1; }
+        .quote-toggle { font-size: 0.7rem; color: #93c5fd; transition: transform 0.2s; }
+        .quote-content { padding: 0 12px 12px 12px; border-top: 1px solid rgba(234,179,8,0.2); }
+        .quote-text { font-size: 0.75rem; line-height: 1.4; color: #e0e0e0; font-style: italic; margin-bottom: 6px; }
+        .quote-author { font-size: 0.6rem; color: #eab308; text-align: right; margin-bottom: 4px; }
+        .quote-explanation { font-size: 0.55rem; color: #8b9dc3; line-height: 1.3; }
+
+        .toolbar {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 20;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 30px;
+            padding: 6px 12px;
+            display: flex;
+            gap: 8px;
+        }
+        .toolbar button { background: rgba(59,130,246,0.5); padding: 4px 10px; font-size: 0.65rem; }
+        #totalGold { color: #eab308; font-weight: bold; margin-left: 12px; }
+
+        #graphCanvas {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+            transform-origin: 0 0;
+        }
+        #graphCanvas:active { cursor: grabbing; }
+
+        /* 节点样式 - 三级不同颜色 */
+        .node-card {
+            position: absolute;
+            border-radius: 30px;
+            padding: 8px 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: box-shadow 0.1s, transform 0.05s;
+            user-select: none;
+        }
+        .node-card.dragging { opacity: 0.85; cursor: grabbing; z-index: 100; }
+        .node-card.highlight { box-shadow: 0 0 20px #eab308; }
+        .node-card.path-highlight { box-shadow: 0 0 20px #eab308; border-color: #eab308 !important; }
+
+        /* 一级 - 红色 */
+        .node-card.level1 {
+            background: linear-gradient(135deg, #3a1a1a, #2a0a0a);
+            border: 2px solid #ef4444;
+        }
+        .node-card.level1 .node-label { font-size: 0.85rem; font-weight: bold; color: #ff6b6b; }
+
+        /* 二级 - 蓝色 */
+        .node-card.level2 {
+            background: linear-gradient(135deg, #1a2a4a, #0a1a3a);
+            border: 2px solid #3b82f6;
+        }
+        .node-card.level2 .node-label { font-size: 0.7rem; color: #60a5fa; }
+
+        /* 三级 - 黄色 */
+        .node-card.level3 {
+            background: linear-gradient(135deg, #3a3a1a, #2a2a0a);
+            border: 2px solid #eab308;
+        }
+        .node-card.level3 .node-label { font-size: 0.6rem; color: #fde047; }
+
+        .node-label { font-weight: 500; }
+        .node-gold { font-size: 0.55rem; opacity: 0.8; margin-top: 2px; }
+
+        /* 充电进度条 */
+        .progress-container {
+            width: 100%;
+            height: 3px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+
+        .line-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .line-layer line {
+            stroke: #3b82f6;
+            stroke-width: 2;
+            stroke-dasharray: 6,4;
+            opacity: 0.7;
+        }
+        .line-layer line.path-highlight {
+            stroke: #eab308;
+            stroke-width: 3;
+            opacity: 1;
+        }
+
+        /* 底部搜索栏 */
+        .footer-search {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15,15,35,0.95);
+            backdrop-filter: blur(12px);
+            padding: 8px 16px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            border-top: 1px solid #3b82f6;
+            z-index: 30;
+        }
+        .footer-search input {
+            width: 280px;
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: none;
+            background: rgba(30,30,60,0.8);
+            color: white;
+            outline: none;
+        }
+        .gold-display {
+            background: linear-gradient(135deg, #2a2a3a, #1a1a2a);
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: 1px solid #eab308;
+            font-weight: bold;
+            color: #eab308;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 240px; }
+            .node-card.level1 .node-label { font-size: 0.7rem; }
+            .node-card.level2 .node-label { font-size: 0.6rem; }
+            .node-card.level3 .node-label { font-size: 0.55rem; }
+            .quote-window { max-width: 220px; min-width: 160px; top: 8px; right: 8px; }
+            .quote-text { font-size: 0.65rem; }
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- 左侧控制面板 - 可伸缩 -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h1>🌌 智能知识图谱</h1>
-                <p class="subtitle">AI识别笔记 · 三级联动 · 层级探索版</p>
-            </div>
-            
+        <!-- 左侧面板 -->
+        <div class="sidebar">
+            <h1>🌌 智能知识图谱</h1>
+            <div class="subtitle">AI识别笔记 · 充电进度版</div>
+
             <!-- 上传区域 -->
-            <div class="upload-section">
-                <label>📁 上传文件识别知识</label>
-                <div class="upload-area" id="uploadArea">
-                    <span class="upload-icon">📤</span>
-                    <span>点击或拖拽</span>
-                    <span class="upload-hint">图片/PDF/Word/Excel/TXT</span>
-                    <input type="file" id="fileUpload" accept="image/*,.pdf,.docx,.xlsx,.xls,.txt" multiple hidden>
-                </div>
-                <div id="uploadProgress" class="upload-progress" style="display:none">
-                    <div class="progress-bar"></div>
-                </div>
-                <div id="uploadResult" class="upload-result"></div>
+            <div class="upload-area" id="uploadArea">
+                <span class="upload-icon">📤</span>
+                <div>点击或拖拽文件上传</div>
+                <input type="file" id="fileInput" accept="image/*,.pdf,.txt" multiple style="display:none">
             </div>
+            <div id="uploadResult" class="upload-result"></div>
 
             <!-- 文件管理器 -->
-            <div class="file-manager-section">
-                <div class="file-manager-header" id="fileManagerHeader">
+            <div class="file-manager">
+                <div class="file-header" id="fileHeader">
                     <h3>📂 文件知识库</h3>
-                    <button id="downloadAllFilesBtn" class="download-btn">⬇️ 下载</button>
+                    <button id="downloadBtn" style="padding:2px 8px; font-size:0.55rem;">⬇️ 下载</button>
                 </div>
-                <div id="fileManagerContent" class="file-manager-content" style="display:block;">
-                    <div style="padding:8px;text-align:center;color:#6b7280;font-size:0.7rem;">暂无文件</div>
-                </div>
+                <div id="fileContent" class="file-content">暂无文件</div>
             </div>
 
             <!-- 手动添加 -->
-            <div class="input-section">
-                <label>✏️ 手动添加</label>
-                <div class="keyword-input-group">
-                    <input type="text" id="keywordInput" placeholder="例如: 量子纠缠...">
-                    <button id="addKeywordBtn">➕</button>
-                </div>
+            <div class="input-group">
+                <input type="text" id="keywordInput" placeholder="输入知识点...">
+                <button id="addBtn">➕ 添加</button>
             </div>
 
             <!-- 预设框架 -->
-            <div class="preset-section">
-                <label>🎯 预设框架</label>
-                <div class="preset-buttons">
-                    <button class="preset-btn" data-path="physics">⚛️物理</button>
-                    <button class="preset-btn" data-path="philosophy">📜哲学</button>
-                    <button class="preset-btn" data-path="ai">🤖AI</button>
-                    <button class="preset-btn" data-path="history">🏛️历史</button>
-                    <button class="preset-btn" data-path="biology">🧬生物</button>
-                </div>
+            <div class="preset-buttons">
+                <button class="preset-btn" data-path="physics">⚛️ 物理</button>
+                <button class="preset-btn" data-path="philosophy">📜 哲学</button>
+                <button class="preset-btn" data-path="ai">🤖 AI</button>
+                <button class="preset-btn" data-path="history">🏛️ 历史</button>
             </div>
 
             <!-- 节点列表 -->
-            <div class="node-list-panel">
-                <h3>📚 知识宇宙</h3>
-                <div class="legend-compact">
-                    <span><span class="color-dot red"></span>一级</span>
-                    <span><span class="color-dot blue"></span>二级</span>
-                    <span><span class="color-dot gray"></span>三级</span>
+            <div>
+                <strong>📚 知识宇宙</strong>
+                <div style="display:flex; gap:12px; font-size:0.55rem; margin:6px 0;">
+                    <span><span style="background:#ef4444; display:inline-block; width:8px; height:8px; border-radius:8px;"></span> 一级</span>
+                    <span><span style="background:#3b82f6; display:inline-block; width:8px; height:8px; border-radius:8px;"></span> 二级</span>
+                    <span><span style="background:#eab308; display:inline-block; width:8px; height:8px; border-radius:8px;"></span> 三级</span>
                 </div>
-                <ul id="nodeListUl"></ul>
-                <div class="node-hint">💡 点击节点展开下级 | 右键删除</div>
+                <ul class="node-list" id="nodeList"></ul>
+                <div class="node-hint">💡 点击节点展开 | 右键删除</div>
             </div>
 
             <!-- 推荐学习 -->
             <div class="recommend-section">
-                <h3>💡 推荐学习</h3>
-                <div id="recommendList" class="recommend-list"></div>
+                <h3>💡 推荐学习 <span id="recTime" style="font-size:0.5rem;"></span></h3>
+                <div id="recommendList" class="recommend-list">加载中...</div>
             </div>
         </div>
 
-        <!-- 伸缩按钮 -->
-        <div class="resize-handle" id="resizeHandle">
-            <div class="handle-line"></div>
-            <div class="handle-line"></div>
-            <div class="handle-line"></div>
-        </div>
-
-        <!-- 右侧画布区 -->
-        <div class="canvas-container" id="canvasContainer">
-            <!-- 每日语录窗口 - 可折叠 -->
+        <!-- 右侧画布 -->
+        <div class="canvas-container">
+            <!-- 每日语录窗口 - 右上角 -->
             <div class="quote-window" id="quoteWindow">
                 <div class="quote-header" id="quoteHeader">
                     <span class="quote-icon">📜</span>
@@ -110,30 +418,717 @@
             </div>
 
             <div class="toolbar">
-                <button id="zoomInBtn">🔍 +</button>
-                <button id="zoomOutBtn">🔍 -</button>
-                <button id="resetViewBtn">🔄 重置</button>
-                <button id="clearAllBtn">🗑️ 清空</button>
+                <button id="zoomIn">🔍 +</button>
+                <button id="zoomOut">🔍 -</button>
+                <button id="resetView">🔄 重置</button>
                 <span id="totalGold">💰 0</span>
             </div>
             <svg id="lineSvg" class="line-layer"></svg>
-            <div class="scroll-wrapper" id="scrollWrapper">
-                <div id="graphCanvas" class="graph-canvas"></div>
-            </div>
+            <div id="graphCanvas"></div>
         </div>
     </div>
 
-    <!-- 底部搜索栏 -->
+    <!-- 底部搜索 -->
     <div class="footer-search">
-        <div class="search-wrapper">
-            <input type="text" id="searchKeyword" placeholder="🔭 搜索知识点...">
-            <div id="goldDisplay" class="gold-display">
-                <span class="gold-icon">💰</span>
-                <span id="goldValue">0</span>
-            </div>
-        </div>
+        <input type="text" id="searchInput" placeholder="🔭 搜索知识点...">
+        <div class="gold-display" id="goldDisplay">💰 0</div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        // ==================== 完整功能版知识图谱 ====================
+        console.log('脚本加载成功');
+
+        // 数据存储
+        let nodes = [];
+        let nextId = 1;
+        let canvasScale = 1;
+        let dragTarget = null;
+        let isDragging = false;
+        let dragStartX = 0, dragStartY = 0, dragStartLeft = 0, dragStartTop = 0, dragHasMoved = false;
+        
+        // 已提取的关键词（从上传的文件中提取）
+        let extractedKeywords = new Set();
+        let uploadedFiles = [];
+
+        // 知识扩展库
+        const expansions = {
+            '量子物理': ['波粒二象性', '量子纠缠', '薛定谔方程', '海森堡不确定性', '量子隧穿'],
+            '经典力学': ['牛顿三定律', '万有引力定律', '动量守恒', '能量守恒', '刚体力学'],
+            '人工智能': ['机器学习', '深度学习', '神经网络', '计算机视觉', '强化学习'],
+            '哲学': ['形而上学', '认识论', '伦理学', '美学', '逻辑学'],
+            '机器学习': ['监督学习', '无监督学习', '强化学习', '决策树', '支持向量机'],
+            '深度学习': ['卷积神经网络CNN', '循环神经网络RNN', '生成对抗网络GAN', 'Transformer', '注意力机制'],
+            '神经网络': ['感知机', '反向传播', '激活函数', '损失函数', '优化器'],
+            '形而上学': ['本体论', '宇宙论', '自由意志', '决定论', '存在'],
+            '认识论': ['知识定义', '真理理论', '怀疑论', '先验知识', '后验知识']
+        };
+
+        // 分类映射（用于文件分类）
+        const categoryMap = {
+            physics: ['物理', '量子', '力学', '相对论', '牛顿'],
+            philosophy: ['哲学', '形而上学', '认识论', '伦理', '美学'],
+            ai: ['AI', '人工智能', '机器学习', '神经网络', '深度'],
+            history: ['历史', '战争', '朝代', '革命']
+        };
+
+        // ==================== 充电进度和金币计算 ====================
+        function calculateNodeProgress(node) {
+            if (!node) return 0;
+            // 完全匹配
+            if (extractedKeywords.has(node.label)) return 100;
+            // 部分匹配
+            for (let kw of extractedKeywords) {
+                if (node.label.includes(kw) || kw.includes(node.label)) {
+                    return 70;
+                }
+            }
+            // 自动扩展的节点（没有在笔记中提取到）返回0
+            if (node.isAutoExpanded) return 0;
+            return 0;
+        }
+
+        function calculateGoldValue(node) {
+            const progress = node.progress || 0;
+            let baseGold = node.level === 1 ? 100 : (node.level === 2 ? 50 : 20);
+            // 只有有进度的节点才计算金币
+            if (progress >= 100) return baseGold;
+            if (progress >= 70) return Math.floor(baseGold * 0.7);
+            if (progress >= 30) return Math.floor(baseGold * 0.3);
+            return 0;
+        }
+
+        function updateAllProgressAndGold() {
+            for (let node of nodes) {
+                node.progress = calculateNodeProgress(node);
+                node.goldValue = calculateGoldValue(node);
+            }
+        }
+
+        function updateTotalGold() {
+            const total = nodes.reduce((sum, n) => sum + (n.goldValue || 0), 0);
+            document.getElementById('totalGold').innerHTML = `💰 ${total}`;
+        }
+
+        // ==================== 节点操作 ====================
+        function addNode(label, x, y, parentId = null, level = 1, isAutoExpanded = false) {
+            if (!label || label.trim() === '') return null;
+            label = label.trim();
+            
+            if (nodes.some(n => n.label === label)) return nodes.find(n => n.label === label);
+            
+            let posX = x || (Math.random() * 400 + 100);
+            let posY = y || (Math.random() * 250 + 100);
+            
+            if (parentId) {
+                const parent = nodes.find(n => n.id === parentId);
+                if (parent) {
+                    const childCount = parent.children ? parent.children.length : 0;
+                    posX = parent.x + (childCount - 2) * 100;
+                    posY = parent.y + 80;
+                }
+            }
+            
+            const newNode = {
+                id: nextId++,
+                label: label,
+                x: posX,
+                y: posY,
+                level: level,
+                parentId: parentId,
+                children: [],
+                progress: 0,
+                goldValue: 0,
+                expanded: false,
+                visible: true,
+                isAutoExpanded: isAutoExpanded
+            };
+            
+            newNode.progress = calculateNodeProgress(newNode);
+            newNode.goldValue = calculateGoldValue(newNode);
+            nodes.push(newNode);
+            
+            if (parentId) {
+                const parent = nodes.find(n => n.id === parentId);
+                if (parent && !parent.children.includes(newNode.id)) {
+                    parent.children.push(newNode.id);
+                }
+            }
+            
+            renderAll();
+            return newNode;
+        }
+
+        // 展开节点（自动生成子节点）
+        function expandNode(nodeId, level) {
+            const node = nodes.find(n => n.id === nodeId);
+            if (!node) return;
+            
+            if (node.children && node.children.length > 0) {
+                for (let childId of node.children) {
+                    const child = nodes.find(n => n.id === childId);
+                    if (child) child.visible = true;
+                }
+                node.expanded = true;
+                renderAll();
+                return;
+            }
+            
+            let subs = expansions[node.label];
+            if (!subs && level === 1) {
+                subs = [`${node.label}基础`, `${node.label}进阶`, `${node.label}应用`];
+            } else if (!subs && level === 2) {
+                subs = [`${node.label}核心概念`, `${node.label}方法论`, `${node.label}案例`];
+            }
+            
+            if (subs) {
+                for (let i = 0; i < subs.length; i++) {
+                    addNode(subs[i], node.x + (i - 2) * 90, node.y + 70, node.id, level + 1, true);
+                }
+            }
+            node.expanded = true;
+            renderAll();
+        }
+
+        function collapseNode(nodeId) {
+            const node = nodes.find(n => n.id === nodeId);
+            if (!node || !node.children) return;
+            for (let childId of node.children) {
+                const child = nodes.find(n => n.id === childId);
+                if (child) {
+                    child.visible = false;
+                    collapseNode(childId);
+                }
+            }
+            node.expanded = false;
+            renderAll();
+        }
+
+        function toggleNode(nodeId, level) {
+            const node = nodes.find(n => n.id === nodeId);
+            if (node.expanded) {
+                collapseNode(nodeId);
+            } else {
+                expandNode(nodeId, level);
+            }
+        }
+
+        function deleteNode(nodeId) {
+            const node = nodes.find(n => n.id === nodeId);
+            if (!node) return;
+            
+            if (node.children) {
+                for (let childId of [...node.children]) {
+                    deleteNode(childId);
+                }
+            }
+            
+            if (node.parentId) {
+                const parent = nodes.find(n => n.id === node.parentId);
+                if (parent && parent.children) {
+                    parent.children = parent.children.filter(id => id !== nodeId);
+                }
+            }
+            
+            nodes = nodes.filter(n => n.id !== nodeId);
+            renderAll();
+            updateRecommendations();
+        }
+
+        // 高亮路径
+        function highlightPath(nodeId) {
+            document.querySelectorAll('.node-card').forEach(el => el.classList.remove('path-highlight'));
+            document.querySelectorAll('.line-layer line').forEach(line => line.classList.remove('path-highlight'));
+            if (!nodeId) return;
+            
+            const nodeEl = document.querySelector(`.node-card[data-id='${nodeId}']`);
+            if (nodeEl) nodeEl.classList.add('path-highlight');
+            
+            const pathIds = new Set();
+            let current = nodes.find(n => n.id === nodeId);
+            while (current) {
+                pathIds.add(current.id);
+                if (current.parentId) current = nodes.find(n => n.id === current.parentId);
+                else break;
+            }
+            
+            function addChildren(id) {
+                const n = nodes.find(n => n.id === id);
+                if (n && n.children) {
+                    for (let childId of n.children) {
+                        pathIds.add(childId);
+                        addChildren(childId);
+                    }
+                }
+            }
+            addChildren(nodeId);
+            
+            for (let id of pathIds) {
+                const el = document.querySelector(`.node-card[data-id='${id}']`);
+                if (el) el.classList.add('path-highlight');
+            }
+            
+            for (let node of nodes) {
+                if (node.children) {
+                    for (let childId of node.children) {
+                        if (pathIds.has(node.id) && pathIds.has(childId)) {
+                            const line = document.querySelector(`.line-layer line[data-from='${node.id}'][data-to='${childId}']`);
+                            if (line) line.classList.add('path-highlight');
+                        }
+                    }
+                }
+            }
+        }
+
+        // ==================== 渲染图谱 ====================
+        function renderAll() {
+            const canvas = document.getElementById('graphCanvas');
+            const svgLine = document.getElementById('lineSvg');
+            
+            if (!canvas) return;
+            canvas.innerHTML = '';
+            
+            const visibleNodes = nodes.filter(n => n.visible !== false);
+            
+            for (let node of visibleNodes) {
+                const div = document.createElement('div');
+                div.className = `node-card level${node.level}`;
+                div.setAttribute('data-id', node.id);
+                div.setAttribute('data-level', node.level);
+                div.style.left = `${node.x}px`;
+                div.style.top = `${node.y}px`;
+                
+                const progressColor = node.level === 1 ? '#ef4444' : (node.level === 2 ? '#3b82f6' : '#eab308');
+                div.innerHTML = `
+                    <div class="node-label">${node.label}</div>
+                    <div class="node-gold">💰 ${node.goldValue || 0}</div>
+                    <div class="progress-container">
+                        <div class="progress-fill" style="width: ${node.progress || 0}%; background: ${progressColor};"></div>
+                    </div>
+                `;
+                canvas.appendChild(div);
+                
+                div.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (!isDragging) toggleNode(node.id, node.level);
+                });
+                
+                div.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    if (confirm(`删除 "${node.label}"？`)) deleteNode(node.id);
+                });
+                
+                div.addEventListener('mouseenter', () => highlightPath(node.id));
+                div.addEventListener('mouseleave', () => highlightPath(null));
+            }
+            
+            // 绘制连线（跟随节点位置）
+            svgLine.innerHTML = '';
+            for (let node of visibleNodes) {
+                if (node.children && node.children.length) {
+                    const parentDiv = document.querySelector(`.node-card[data-id='${node.id}']`);
+                    if (!parentDiv) continue;
+                    const parentRect = parentDiv.getBoundingClientRect();
+                    const canvasRect = canvas.getBoundingClientRect();
+                    const startX = parentRect.left + parentRect.width/2 - canvasRect.left;
+                    const startY = parentRect.top + parentRect.height/2 - canvasRect.top;
+                    
+                    for (let childId of node.children) {
+                        const childDiv = document.querySelector(`.node-card[data-id='${childId}']`);
+                        if (childDiv) {
+                            const childRect = childDiv.getBoundingClientRect();
+                            const endX = childRect.left + childRect.width/2 - canvasRect.left;
+                            const endY = childRect.top + childRect.height/2 - canvasRect.top;
+                            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                            line.setAttribute('x1', startX);
+                            line.setAttribute('y1', startY);
+                            line.setAttribute('x2', endX);
+                            line.setAttribute('y2', endY);
+                            line.setAttribute('data-from', node.id);
+                            line.setAttribute('data-to', childId);
+                            svgLine.appendChild(line);
+                        }
+                    }
+                }
+            }
+            
+            updateTotalGold();
+            updateNodeList();
+        }
+
+        function updateNodeList() {
+            const container = document.getElementById('nodeList');
+            if (!container) return;
+            container.innerHTML = '';
+            const topNodes = nodes.filter(n => n.level === 1);
+            for (let node of topNodes) {
+                const li = document.createElement('li');
+                li.style.borderLeftColor = '#ef4444';
+                li.innerHTML = `${node.label} 💰${node.goldValue || 0}`;
+                li.onclick = () => toggleNode(node.id, 1);
+                container.appendChild(li);
+            }
+        }
+
+        // ==================== 推荐学习（自动更新） ====================
+        function updateRecommendations() {
+            // 找出进度低于30%且不是自动扩展的二级节点
+            const toLearn = nodes.filter(n => {
+                const progress = n.progress || 0;
+                return n.level === 2 && progress < 30 && !n.isAutoExpanded;
+            });
+            const recDiv = document.getElementById('recommendList');
+            if (toLearn.length === 0) {
+                recDiv.innerHTML = '🎉 完成探索！继续上传新文件~';
+                return;
+            }
+            const top5 = toLearn.slice(0, 5);
+            recDiv.innerHTML = top5.map(n => `<div class="recommend-item" onclick="window.toggleNode(${n.id},2)">📖 ${n.label} (${100 - (n.progress||0)}%未掌握)</div>`).join('');
+            document.getElementById('recTime').innerHTML = `更新于${new Date().toLocaleTimeString()}`;
+        }
+
+        // 定时更新推荐（每30秒）
+        let recommendTimer;
+        function startRecommendAutoUpdate() {
+            if (recommendTimer) clearInterval(recommendTimer);
+            recommendTimer = setInterval(() => {
+                updateRecommendations();
+            }, 30000);
+        }
+
+        // ==================== 每日语录（右上角，每30分钟更新） ====================
+        const quotes = [
+            { text: "学而不思则罔，思而不学则殆。", author: "孔子", explanation: "只学习不思考就会迷惑，只思考不学习就会危险。" },
+            { text: "天行健，君子以自强不息。", author: "《周易》", explanation: "宇宙不停运转，君子应效法天地，永远不断地前进。" },
+            { text: "宝剑锋从磨砺出，梅花香自苦寒来。", author: "佚名", explanation: "成功需经历艰苦磨练。" },
+            { text: "路漫漫其修远兮，吾将上下而求索。", author: "屈原", explanation: "道路漫长，我将不遗余力地追求探索。" },
+            { text: "不积跬步，无以至千里；不积小流，无以成江海。", author: "荀子", explanation: "积累的重要性，从小做起。" },
+            { text: "Stay hungry, stay foolish.", author: "Steve Jobs", explanation: "求知若饥，虚心若愚。" },
+            { text: "Knowledge is power.", author: "Francis Bacon", explanation: "知识就是力量。" },
+            { text: "纸上得来终觉浅，绝知此事要躬行。", author: "陆游", explanation: "书本知识终觉浅薄，亲身实践才能真知。" },
+            { text: "问渠那得清如许？为有源头活水来。", author: "朱熹", explanation: "知识需要不断更新。" }
+        ];
+
+        let currentQuoteIndex = 0;
+        function updateDailyQuote() {
+            const quote = quotes[currentQuoteIndex % quotes.length];
+            currentQuoteIndex++;
+            document.getElementById('quoteText').innerHTML = `“${quote.text}”`;
+            document.getElementById('quoteAuthor').innerHTML = `—— ${quote.author}`;
+            document.getElementById('quoteExplanation').innerHTML = `📖 ${quote.explanation}`;
+            
+            // 根据文字长度调整窗口大小
+            const quoteWindow = document.getElementById('quoteWindow');
+            const textLen = quote.text.length;
+            if (textLen < 20) {
+                quoteWindow.style.maxWidth = '220px';
+                quoteWindow.style.minWidth = '180px';
+            } else if (textLen < 35) {
+                quoteWindow.style.maxWidth = '280px';
+                quoteWindow.style.minWidth = '240px';
+            } else {
+                quoteWindow.style.maxWidth = '320px';
+                quoteWindow.style.minWidth = '280px';
+            }
+        }
+
+        let quoteTimer;
+        function startQuoteAutoUpdate() {
+            updateDailyQuote();
+            if (quoteTimer) clearInterval(quoteTimer);
+            quoteTimer = setInterval(updateDailyQuote, 30 * 60 * 1000);
+        }
+
+        // 语录窗口折叠
+        function initQuoteWindow() {
+            const quoteWindow = document.getElementById('quoteWindow');
+            const quoteHeader = document.getElementById('quoteHeader');
+            quoteHeader.onclick = () => quoteWindow.classList.toggle('collapsed');
+        }
+
+        // ==================== 文件上传处理 ====================
+        function extractKeywords(text) {
+            const stopWords = ['的', '了', '是', '在', '和', '与', '有', '我', '你', '他', '她', 'it', 'the', 'a', 'an'];
+            const words = text.split(/[ ,，。！？\n\t、；;:：]+/);
+            const freq = new Map();
+            for (let w of words) {
+                if (w.length < 2 || w.length > 12) continue;
+                if (stopWords.includes(w)) continue;
+                freq.set(w, (freq.get(w) || 0) + 1);
+            }
+            return [...freq.entries()].sort((a,b) => b[1]-a[1]).slice(0, 6).map(k=>k[0]);
+        }
+
+        function getFileCategory(keywords) {
+            for (let [cat, kwList] of Object.entries(categoryMap)) {
+                if (keywords.some(kw => kwList.includes(kw))) return cat;
+            }
+            return '其他';
+        }
+
+        async function processFile(file) {
+            const resultDiv = document.getElementById('uploadResult');
+            resultDiv.innerHTML = `📄 解析: ${file.name}...`;
+            
+            let text = '';
+            try {
+                if (file.type.startsWith('image/')) {
+                    resultDiv.innerHTML = `🖼️ 图片识别中... 需要OCR库，演示模式使用模拟数据`;
+                    text = `这是一个测试文件，包含的关键词：量子物理，机器学习，哲学`;
+                } else if (file.name.endsWith('.txt')) {
+                    text = await file.text();
+                } else {
+                    text = `模拟内容：${file.name} 包含知识点 量子物理 经典力学 人工智能`;
+                }
+            } catch(e) {
+                text = `量子物理 机器学习 神经网络 哲学 认识论`;
+            }
+            
+            const keywords = extractKeywords(text);
+            const category = getFileCategory(keywords);
+            
+            uploadedFiles.push({
+                id: Date.now(),
+                name: file.name,
+                keywords: keywords,
+                category: category
+            });
+            
+            // 添加到提取关键词集合
+            for (let kw of keywords) {
+                extractedKeywords.add(kw);
+            }
+            
+            // 更新所有节点进度
+            updateAllProgressAndGold();
+            
+            // 添加新节点
+            for (let kw of keywords) {
+                if (!nodes.some(n => n.label === kw)) {
+                    addNode(kw, undefined, undefined, null, 1, false);
+                }
+            }
+            
+            resultDiv.innerHTML = `✅ ${file.name}<br>📌 提取: ${keywords.join(', ')} | 📁 分类: ${category}`;
+            renderAll();
+            updateRecommendations();
+            updateFileManager();
+        }
+
+        function updateFileManager() {
+            const container = document.getElementById('fileContent');
+            if (uploadedFiles.length === 0) {
+                container.innerHTML = '暂无文件';
+                return;
+            }
+            let html = '';
+            for (let f of uploadedFiles) {
+                html += `<div class="file-item">
+                    <span>📄 ${f.name.substring(0, 25)}</span>
+                    <span class="delete-file" onclick="deleteFile(${f.id})">🗑️</span>
+                </div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function deleteFile(fileId) {
+            uploadedFiles = uploadedFiles.filter(f => f.id !== fileId);
+            // 重建提取关键词集合
+            extractedKeywords.clear();
+            for (let f of uploadedFiles) {
+                for (let kw of f.keywords) {
+                    extractedKeywords.add(kw);
+                }
+            }
+            updateAllProgressAndGold();
+            updateFileManager();
+            renderAll();
+            updateRecommendations();
+        }
+
+        function downloadAllFiles() {
+            let content = "文件知识库导出\n\n";
+            for (let f of uploadedFiles) {
+                content += `文件: ${f.name}\n关键词: ${f.keywords.join(', ')}\n分类: ${f.category}\n\n`;
+            }
+            const blob = new Blob([content], {type: 'text/plain'});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `知识库_${Date.now()}.txt`;
+            link.click();
+        }
+
+        // ==================== 搜索 ====================
+        function searchNode(keyword) {
+            if (!keyword) {
+                document.getElementById('goldDisplay').innerHTML = '💰 0';
+                return;
+            }
+            const found = nodes.find(n => n.label.toLowerCase().includes(keyword.toLowerCase()));
+            if (found) {
+                document.getElementById('goldDisplay').innerHTML = `💰 ${found.goldValue || 0}`;
+                highlightPath(found.id);
+                setTimeout(() => highlightPath(null), 2000);
+            } else {
+                document.getElementById('goldDisplay').innerHTML = '💰 0';
+            }
+        }
+
+        // ==================== 缩放和视图 ====================
+        function zoom(delta) {
+            canvasScale = Math.min(2, Math.max(0.4, canvasScale + delta));
+            document.getElementById('graphCanvas').style.transform = `scale(${canvasScale})`;
+            // 缩放后重新绘制连线
+            setTimeout(() => renderAll(), 50);
+        }
+        
+        function resetZoom() {
+            canvasScale = 1;
+            document.getElementById('graphCanvas').style.transform = 'scale(1)';
+            setTimeout(() => renderAll(), 50);
+        }
+
+        // 滚轮时线条跟随
+        function initWheelFollow() {
+            const scrollWrapper = document.getElementById('graphCanvas').parentElement;
+            if (scrollWrapper) {
+                scrollWrapper.addEventListener('scroll', () => renderAll());
+            }
+            document.getElementById('graphCanvas').addEventListener('wheel', () => {
+                setTimeout(() => renderAll(), 30);
+            });
+        }
+
+        // ==================== 拖拽功能 ====================
+        function initDrag() {
+            document.addEventListener('mousedown', (e) => {
+                const node = e.target.closest('.node-card');
+                if (!node) return;
+                dragTarget = node;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                dragStartLeft = parseInt(node.style.left);
+                dragStartTop = parseInt(node.style.top);
+                dragHasMoved = false;
+                isDragging = false;
+                node.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!dragTarget) return;
+                const dx = e.clientX - dragStartX;
+                const dy = e.clientY - dragStartY;
+                if (!dragHasMoved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+                    dragHasMoved = true;
+                    isDragging = true;
+                    dragTarget.classList.add('dragging');
+                }
+                if (dragHasMoved) {
+                    const newLeft = dragStartLeft + dx;
+                    const newTop = dragStartTop + dy;
+                    dragTarget.style.left = `${newLeft}px`;
+                    dragTarget.style.top = `${newTop}px`;
+                    const nodeId = parseInt(dragTarget.getAttribute('data-id'));
+                    const node = nodes.find(n => n.id === nodeId);
+                    if (node) {
+                        node.x = newLeft;
+                        node.y = newTop;
+                        renderAll();
+                    }
+                }
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (dragTarget) {
+                    dragTarget.classList.remove('dragging');
+                    dragTarget.style.cursor = '';
+                    dragTarget = null;
+                }
+                isDragging = false;
+                dragHasMoved = false;
+            });
+        }
+
+        // ==================== 预设框架 ====================
+        function addPreset(type) {
+            const presets = {
+                physics: ['量子物理', '经典力学', '相对论', '热力学'],
+                philosophy: ['哲学', '形而上学', '认识论', '伦理学'],
+                ai: ['人工智能', '机器学习', '深度学习', '神经网络'],
+                history: ['古代史', '中世纪史', '近代史', '现代史']
+            };
+            for (let topic of (presets[type] || [])) {
+                if (!nodes.some(n => n.label === topic)) {
+                    addNode(topic);
+                }
+            }
+        }
+
+        // ==================== 初始化演示 ====================
+        function initDemo() {
+            addNode('量子物理', 300, 180, null, 1);
+            addNode('经典力学', 550, 180, null, 1);
+            addNode('人工智能', 420, 350, null, 1);
+            addNode('哲学', 150, 320, null, 1);
+        }
+
+        // ==================== 事件绑定 ====================
+        function bindEvents() {
+            document.getElementById('addBtn').onclick = () => {
+                const input = document.getElementById('keywordInput');
+                if (input.value.trim()) {
+                    addNode(input.value.trim());
+                    input.value = '';
+                }
+            };
+            document.getElementById('zoomIn').onclick = () => zoom(0.1);
+            document.getElementById('zoomOut').onclick = () => zoom(-0.1);
+            document.getElementById('resetView').onclick = resetZoom;
+            document.getElementById('searchInput').oninput = (e) => searchNode(e.target.value);
+            document.getElementById('downloadBtn').onclick = downloadAllFiles;
+            
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.onclick = () => addPreset(btn.getAttribute('data-path'));
+            });
+            
+            // 文件上传
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            uploadArea.onclick = () => fileInput.click();
+            uploadArea.ondragover = (e) => { e.preventDefault(); uploadArea.style.borderColor = '#60a5fa'; };
+            uploadArea.ondragleave = () => uploadArea.style.borderColor = '#3b82f6';
+            uploadArea.ondrop = (e) => {
+                e.preventDefault();
+                const files = e.dataTransfer.files;
+                for (let f of files) processFile(f);
+            };
+            fileInput.onchange = (e) => {
+                for (let f of e.target.files) processFile(f);
+            };
+            
+            // 文件管理器折叠
+            const fileHeader = document.getElementById('fileHeader');
+            const fileContent = document.getElementById('fileContent');
+            fileHeader.onclick = (e) => {
+                if (e.target.tagName === 'BUTTON') return;
+                fileContent.style.display = fileContent.style.display === 'none' ? 'block' : 'none';
+            };
+        }
+
+        // 暴露全局函数供HTML调用
+        window.toggleNode = toggleNode;
+        window.deleteFile = deleteFile;
+
+        // 启动
+        initDrag();
+        initWheelFollow();
+        initQuoteWindow();
+        bindEvents();
+        startQuoteAutoUpdate();
+        startRecommendAutoUpdate();
+        initDemo();
+        
+        console.log('初始化完成，节点数:', nodes.length);
+    </script>
 </body>
 </html>
