@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>智能知识图谱 | AI学习助手 - 电量灌注版</title>
+    <title>智能知识图谱 | AI学习助手 - 水滴粒子版</title>
     <style>
         * {
             margin: 0;
@@ -190,31 +190,78 @@
             overflow: auto;
             -webkit-overflow-scrolling: touch;
             cursor: grab;
+            position: relative;
         }
         .canvas-wrapper:active { cursor: grabbing; }
         
         #graphCanvas {
             position: relative;
             transform-origin: 0 0;
-            width: 2000px;
-            height: 1500px;
+            width: 2500px;
+            height: 1800px;
         }
 
-        /* 节点样式 - 椭圆形，电量灌注效果 */
+        /* 节点样式 - 水滴形，大小随等级变化 */
         .node-card {
             position: absolute;
-            border-radius: 50px;
-            padding: 8px 18px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
             cursor: pointer;
             transition: box-shadow 0.1s, transform 0.05s;
             user-select: none;
-            overflow: hidden;
+            overflow: visible;
             backdrop-filter: blur(4px);
+            animation: gentleFloat 3s ease-in-out infinite;
+            transform-origin: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .node-card.dragging { opacity: 0.85; cursor: grabbing; z-index: 100; }
-        .node-card.highlight { box-shadow: 0 0 20px #eab308; }
-        .node-card.path-highlight { box-shadow: 0 0 20px #eab308; border-color: #eab308 !important; }
+        
+        /* 水滴晃动动画 */
+        @keyframes gentleFloat {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-3px) rotate(1deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        
+        @keyframes particleMove {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 200%; }
+        }
+        
+        /* 粒子移动效果 */
+        .node-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: inherit;
+            background: radial-gradient(circle at 30% 40%, rgba(255,255,255,0.15) 0%, transparent 70%);
+            pointer-events: none;
+            animation: particleMove 8s linear infinite;
+        }
+        
+        .node-card.dragging, .node-card.clicked-static {
+            animation: none !important;
+        }
+        
+        .node-card.dragging::before, .node-card.clicked-static::before {
+            animation: none;
+        }
+
+        /* 等级大小 */
+        .node-card.level1 { width: 100px; height: 70px; font-size: 0.85rem; font-weight: bold; }
+        .node-card.level2 { width: 85px; height: 60px; font-size: 0.75rem; }
+        .node-card.level3 { width: 70px; height: 50px; font-size: 0.65rem; }
+        .node-card.level4 { width: 60px; height: 42px; font-size: 0.55rem; }
+
+        /* 等级颜色 */
+        .node-card.level1 { background: linear-gradient(145deg, #3a1a1a, #2a0a0a); border: 2px solid #ef4444; box-shadow: 0 0 15px rgba(239,68,68,0.3); }
+        .node-card.level2 { background: linear-gradient(145deg, #1a2a4a, #0a1a3a); border: 2px solid #3b82f6; }
+        .node-card.level3 { background: linear-gradient(145deg, #3a3a1a, #2a2a0a); border: 2px solid #eab308; }
+        .node-card.level4 { background: linear-gradient(145deg, #3a1a3a, #2a0a2a); border: 2px solid #a855f7; }
 
         /* 电量灌注背景 */
         .node-card .battery-fill {
@@ -223,43 +270,72 @@
             left: 0;
             height: 100%;
             width: 0%;
-            border-radius: 50px;
-            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 0;
             opacity: 0.35;
         }
+        .node-card.level1 .battery-fill { background: #ef4444; }
+        .node-card.level2 .battery-fill { background: #3b82f6; }
+        .node-card.level3 .battery-fill { background: #eab308; }
+        .node-card.level4 .battery-fill { background: #a855f7; }
+
         .node-card .content {
             position: relative;
             z-index: 2;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            justify-content: center;
+            gap: 2px;
+            width: 100%;
+            text-align: center;
         }
-        .node-label { font-weight: 500; font-size: 0.8rem; white-space: nowrap; }
-        .node-gold { font-size: 0.55rem; opacity: 0.9; display: flex; align-items: center; gap: 2px; }
-
-        /* 一级 - 红色 */
-        .node-card.level1 { background: linear-gradient(135deg, #3a1a1a, #2a0a0a); border: 2px solid #ef4444; }
+        .node-label { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
         .node-card.level1 .node-label { color: #ff6b6b; }
-        .node-card.level1 .battery-fill { background: #ef4444; }
-
-        /* 二级 - 蓝色 */
-        .node-card.level2 { background: linear-gradient(135deg, #1a2a4a, #0a1a3a); border: 2px solid #3b82f6; }
         .node-card.level2 .node-label { color: #60a5fa; }
-        .node-card.level2 .battery-fill { background: #3b82f6; }
-
-        /* 三级 - 黄色 */
-        .node-card.level3 { background: linear-gradient(135deg, #3a3a1a, #2a2a0a); border: 2px solid #eab308; }
         .node-card.level3 .node-label { color: #fde047; }
-        .node-card.level3 .battery-fill { background: #eab308; }
-
-        /* 四级 - 紫色 */
-        .node-card.level4 { background: linear-gradient(135deg, #3a1a3a, #2a0a2a); border: 2px solid #a855f7; }
         .node-card.level4 .node-label { color: #c084fc; }
-        .node-card.level4 .battery-fill { background: #a855f7; }
 
-        /* 线条层 - 细线连接到图标边缘 */
+        /* 金币图标 - 外侧右边 */
+        .gold-coin {
+            position: absolute;
+            right: -22px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(145deg, #fbbf24, #d97706);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.55rem;
+            font-weight: bold;
+            color: #1a1a2a;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            z-index: 3;
+            border: 1px solid #fde047;
+        }
+        .node-card.level1 .gold-coin { width: 24px; height: 24px; font-size: 0.65rem; right: -26px; }
+        .node-card.level4 .gold-coin { width: 18px; height: 18px; font-size: 0.5rem; right: -20px; }
+
+        /* 路径文字 - 悬浮时显示 */
+        .path-tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.85);
+            color: #eab308;
+            font-size: 0.55rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            white-space: nowrap;
+            z-index: 30;
+            pointer-events: none;
+            border: 1px solid #eab308;
+            font-family: monospace;
+        }
+
+        /* 线条层 - 细线连接到边框中线 */
         .line-layer {
             position: absolute;
             top: 0;
@@ -271,13 +347,13 @@
         }
         .line-layer line {
             stroke: #5b8cbf;
-            stroke-width: 1.2;
-            stroke-dasharray: 4,3;
+            stroke-width: 1;
+            stroke-dasharray: 3,3;
             opacity: 0.5;
         }
         .line-layer line.path-highlight {
             stroke: #eab308;
-            stroke-width: 1.8;
+            stroke-width: 1.5;
             opacity: 1;
         }
 
@@ -302,13 +378,14 @@
         /* 手机适配 */
         @media (max-width: 768px) {
             .sidebar { width: 220px; min-width: 160px; }
-            .node-card { padding: 5px 12px; }
-            .node-label { font-size: 0.65rem; white-space: nowrap; }
-            .node-gold { font-size: 0.5rem; }
+            .node-card.level1 { width: 80px; height: 56px; }
+            .node-card.level2 { width: 68px; height: 48px; }
+            .node-card.level3 { width: 56px; height: 40px; }
+            .node-card.level4 { width: 48px; height: 34px; }
+            .node-label { font-size: 0.55rem; max-width: 70px; }
+            .gold-coin { width: 16px; height: 16px; font-size: 0.45rem; right: -18px; }
             .quote-window { max-width: 200px; min-width: 150px; top: 8px; right: 8px; }
-            .quote-text { font-size: 0.6rem; }
             .toolbar button { padding: 2px 6px; font-size: 0.55rem; }
-            #graphCanvas { width: 1600px; height: 1200px; }
         }
     </style>
 </head>
@@ -317,7 +394,7 @@
         <!-- 左侧面板 -->
         <div class="sidebar" id="sidebar">
             <h1>🌌 智能知识图谱</h1>
-            <div class="subtitle">AI识别笔记 · 电量灌注版</div>
+            <div class="subtitle">AI识别笔记 · 水滴粒子版</div>
 
             <div class="upload-area" id="uploadArea">
                 <span class="upload-icon">📤</span>
@@ -355,7 +432,7 @@
                     <span><span style="background:#a855f7; display:inline-block; width:7px; height:7px; border-radius:7px;"></span> 四级</span>
                 </div>
                 <ul class="node-list" id="nodeList"></ul>
-                <div class="node-hint">💡 点击展开/收起 | 右键删除 | 长按拖动</div>
+                <div class="node-hint">💡 点击展开/收起 | 右键删除 | 拖拽移动</div>
             </div>
 
             <div class="recommend-section">
@@ -395,7 +472,7 @@
             </div>
 
             <div class="canvas-wrapper" id="canvasWrapper">
-                <svg id="lineSvg" class="line-layer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></svg>
+                <svg id="lineSvg" class="line-layer"></svg>
                 <div id="graphCanvas"></div>
             </div>
         </div>
@@ -407,14 +484,15 @@
     </div>
 
     <script>
-        // ==================== 智能知识图谱 - 电量灌注版 ====================
+        // ==================== 智能知识图谱 - 水滴粒子版 ====================
         let nodes = [];
         let nextId = 1;
         let dragTarget = null;
         let isDragging = false;
         let dragStartX = 0, dragStartY = 0, dragStartLeft = 0, dragStartTop = 0;
         let dragHasMoved = false;
-        let wrapperScale = 1;
+        let currentZoom = 1;
+        let activeTooltip = null;
         
         let extractedKeywords = new Set();
         let uploadedFiles = [];
@@ -473,6 +551,39 @@
             document.getElementById('totalGold').innerHTML = `💰 ${total}`;
         }
 
+        // 显示路径文字
+        function showPathTooltip(nodeId, event) {
+            if (activeTooltip) activeTooltip.remove();
+            const node = nodes.find(n => n.id === nodeId);
+            if (!node) return;
+            
+            // 收集路径
+            let path = [];
+            let current = node;
+            while (current) {
+                path.unshift(current.label);
+                if (current.parentId) current = nodes.find(n => n.id === current.parentId);
+                else break;
+            }
+            
+            const tooltip = document.createElement('div');
+            tooltip.className = 'path-tooltip';
+            tooltip.innerHTML = path.join(' → ');
+            
+            const rect = event.target.getBoundingClientRect();
+            const containerRect = document.getElementById('canvasContainer').getBoundingClientRect();
+            tooltip.style.left = (rect.left - containerRect.left + rect.width/2 - 50) + 'px';
+            tooltip.style.top = (rect.top - containerRect.top - 25) + 'px';
+            
+            document.getElementById('canvasContainer').appendChild(tooltip);
+            activeTooltip = tooltip;
+            
+            setTimeout(() => {
+                if (activeTooltip) activeTooltip.remove();
+                activeTooltip = null;
+            }, 2000);
+        }
+
         // 添加节点
         function addNode(label, x, y, parentId = null, level = 1, isAutoExpanded = false) {
             if (!label || label.trim() === '') return null;
@@ -480,15 +591,15 @@
             let existing = nodes.find(n => n.label === label);
             if (existing) return existing;
             
-            let posX = x || (Math.random() * 400 + 100);
-            let posY = y || (Math.random() * 250 + 100);
+            let posX = x || (Math.random() * 500 + 150);
+            let posY = y || (Math.random() * 300 + 120);
             
             if (parentId) {
                 const parent = nodes.find(n => n.id === parentId);
                 if (parent) {
                     const childCount = parent.children ? parent.children.length : 0;
-                    posX = parent.x + (childCount - 2) * 110;
-                    posY = parent.y + 85;
+                    posX = parent.x + (childCount - 2) * 120;
+                    posY = parent.y + 90;
                 }
             }
             
@@ -521,7 +632,7 @@
             return newNode;
         }
 
-        // 展开/收起节点（支持递归）
+        // 展开/收起节点
         function expandNode(nodeId, level) {
             const node = nodes.find(n => n.id === nodeId);
             if (!node) return;
@@ -546,7 +657,7 @@
             
             if (subs) {
                 for (let i = 0; i < subs.length; i++) {
-                    addNode(subs[i], node.x + (i - 2) * 95, node.y + 85, node.id, level + 1, true);
+                    addNode(subs[i], node.x + (i - 2) * 110, node.y + 95, node.id, Math.min(level + 1, 4), true);
                 }
             }
             node.expanded = true;
@@ -637,7 +748,7 @@
             }
         }
 
-        // 渲染 - 电量灌注效果，线条连接到图标边缘
+        // 渲染 - 线条连接到边框中线
         function renderAll() {
             const canvas = document.getElementById('graphCanvas');
             const svgLine = document.getElementById('lineSvg');
@@ -647,28 +758,33 @@
             const visibleNodes = nodes.filter(n => n.visible !== false);
             
             for (let node of visibleNodes) {
+                const levelClass = Math.min(node.level, 4);
+                const sizeClass = `level${levelClass}`;
                 const div = document.createElement('div');
-                div.className = `node-card level${Math.min(node.level, 4)}`;
+                div.className = `node-card ${sizeClass}`;
                 div.setAttribute('data-id', node.id);
                 div.setAttribute('data-level', node.level);
                 div.style.left = `${node.x}px`;
                 div.style.top = `${node.y}px`;
                 
                 const batteryWidth = Math.min(100, node.battery || 0);
-                const batteryColor = node.level === 1 ? '#ef4444' : (node.level === 2 ? '#3b82f6' : (node.level === 3 ? '#eab308' : '#a855f7'));
                 
                 div.innerHTML = `
-                    <div class="battery-fill" style="width: ${batteryWidth}%; background: ${batteryColor};"></div>
+                    <div class="battery-fill" style="width: ${batteryWidth}%;"></div>
                     <div class="content">
                         <div class="node-label">${node.label}</div>
-                        <div class="node-gold">💰 ${node.goldValue || 0}</div>
                     </div>
+                    <div class="gold-coin">💰${node.goldValue || 0}</div>
                 `;
                 canvas.appendChild(div);
                 
                 div.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    if (!isDragging) toggleNode(node.id, node.level);
+                    if (!isDragging) {
+                        toggleNode(node.id, node.level);
+                        div.classList.add('clicked-static');
+                        setTimeout(() => div.classList.remove('clicked-static'), 500);
+                    }
                 });
                 
                 div.addEventListener('contextmenu', (e) => {
@@ -676,35 +792,48 @@
                     if (confirm(`删除 "${node.label}"？`)) deleteNode(node.id);
                 });
                 
-                div.addEventListener('mouseenter', () => highlightPath(node.id));
+                div.addEventListener('mouseenter', (e) => {
+                    highlightPath(node.id);
+                    showPathTooltip(node.id, e);
+                });
                 div.addEventListener('mouseleave', () => highlightPath(null));
             }
             
-            // 绘制线条 - 连接到图标边缘
+            // 更新线条 - 连接到节点边框的中线位置
+            updateLines();
+            
+            updateTotalGold();
+            updateNodeList();
+        }
+        
+        function updateLines() {
+            const svgLine = document.getElementById('lineSvg');
+            const canvas = document.getElementById('graphCanvas');
+            if (!svgLine || !canvas) return;
+            
             svgLine.innerHTML = '';
+            const visibleNodes = nodes.filter(n => n.visible !== false);
             const canvasRect = canvas.getBoundingClientRect();
             const wrapperRect = document.getElementById('canvasWrapper').getBoundingClientRect();
-            const offsetX = canvasRect.left - wrapperRect.left;
-            const offsetY = canvasRect.top - wrapperRect.top;
             
             for (let node of visibleNodes) {
                 if (node.children && node.children.length) {
                     const parentDiv = document.querySelector(`.node-card[data-id='${node.id}']`);
                     if (!parentDiv) continue;
                     const parentRect = parentDiv.getBoundingClientRect();
-                    const canvasRectLocal = canvas.getBoundingClientRect();
                     
-                    // 计算父节点边缘位置（右侧）
-                    const startX = parentRect.right - canvasRectLocal.left - 5;
-                    const startY = parentRect.top + parentRect.height/2 - canvasRectLocal.top;
+                    // 父节点右边框中线位置
+                    const startX = parentRect.right - canvasRect.left - 5;
+                    const startY = parentRect.top + parentRect.height/2 - canvasRect.top;
                     
                     for (let childId of node.children) {
                         const childDiv = document.querySelector(`.node-card[data-id='${childId}']`);
                         if (childDiv) {
                             const childRect = childDiv.getBoundingClientRect();
-                            // 子节点边缘位置（左侧）
-                            const endX = childRect.left - canvasRectLocal.left + 5;
-                            const endY = childRect.top + childRect.height/2 - canvasRectLocal.top;
+                            // 子节点左边框中线位置
+                            const endX = childRect.left - canvasRect.left + 5;
+                            const endY = childRect.top + childRect.height/2 - canvasRect.top;
+                            
                             const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                             line.setAttribute('x1', startX);
                             line.setAttribute('y1', startY);
@@ -717,9 +846,14 @@
                     }
                 }
             }
-            
-            updateTotalGold();
-            updateNodeList();
+        }
+
+        // 滚动时更新线条位置
+        function bindScrollLineUpdate() {
+            const wrapper = document.getElementById('canvasWrapper');
+            wrapper.addEventListener('scroll', () => {
+                requestAnimationFrame(() => updateLines());
+            });
         }
 
         function updateNodeList() {
@@ -849,17 +983,16 @@
             } else { document.getElementById('goldDisplay').innerHTML = '💰 0'; }
         }
 
-        // 缩放和清除
-        let currentZoom = 1;
+        // 缩放
         function zoom(delta) {
             currentZoom = Math.min(2.5, Math.max(0.4, currentZoom + delta));
             document.getElementById('graphCanvas').style.transform = `scale(${currentZoom})`;
-            setTimeout(() => renderAll(), 60);
+            setTimeout(() => updateLines(), 60);
         }
-        function resetView() { currentZoom = 1; document.getElementById('graphCanvas').style.transform = 'scale(1)'; setTimeout(() => renderAll(), 60); }
+        function resetView() { currentZoom = 1; document.getElementById('graphCanvas').style.transform = 'scale(1)'; setTimeout(() => updateLines(), 60); }
         function clearAll() { nodes = []; nextId = 1; extractedKeywords.clear(); uploadedFiles = []; renderAll(); updateFileManager(); updateRecommendations(); }
 
-        // 无限缩放（双指/滚轮）
+        // 无限缩放
         function initPinchZoom() {
             const wrapper = document.getElementById('canvasWrapper');
             wrapper.addEventListener('wheel', (e) => {
@@ -883,6 +1016,7 @@
                 dragHasMoved = false;
                 isDragging = false;
                 node.style.cursor = 'grabbing';
+                node.style.animation = 'none';
                 e.preventDefault();
             });
             document.addEventListener('mousemove', (e) => {
@@ -902,12 +1036,18 @@
                     const nodeId = parseInt(dragTarget.getAttribute('data-id'));
                     const node = nodes.find(n => n.id === nodeId);
                     if (node) { node.x = newLeft; node.y = newTop; }
-                    renderAll();
+                    updateLines();
                 }
             });
             document.addEventListener('mouseup', () => {
-                if (dragTarget) { dragTarget.classList.remove('dragging'); dragTarget.style.cursor = ''; dragTarget = null; }
+                if (dragTarget) {
+                    dragTarget.classList.remove('dragging');
+                    dragTarget.style.cursor = '';
+                    dragTarget.style.animation = 'gentleFloat 3s ease-in-out infinite';
+                    dragTarget = null;
+                }
                 isDragging = false; dragHasMoved = false;
+                renderAll();
             });
         }
 
@@ -927,10 +1067,10 @@
         }
 
         function initDemo() {
-            addNode('量子物理', 300, 180, null, 1);
-            addNode('经典力学', 550, 180, null, 1);
-            addNode('人工智能', 420, 350, null, 1);
-            addNode('哲学', 150, 320, null, 1);
+            addNode('量子物理', 350, 200, null, 1);
+            addNode('经典力学', 600, 200, null, 1);
+            addNode('人工智能', 470, 380, null, 1);
+            addNode('哲学', 180, 350, null, 1);
         }
 
         function bindEvents() {
@@ -958,6 +1098,7 @@
         initDrag();
         initResize();
         initPinchZoom();
+        bindScrollLineUpdate();
         initQuoteWindow();
         bindEvents();
         startQuoteAutoUpdate();
