@@ -13,11 +13,11 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- 左侧控制面板 - 可伸缩 -->
+        <!-- 左侧控制面板 -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <h1>🌌 智能知识图谱</h1>
-                <p class="subtitle">AI识别笔记 · 三级联动 · 层级探索版</p>
+                <p class="subtitle">AI识别笔记 · 三级联动 · 充电进度版</p>
             </div>
             
             <!-- 上传区域 -->
@@ -71,17 +71,17 @@
             <div class="node-list-panel">
                 <h3>📚 知识宇宙</h3>
                 <div class="legend-compact">
-                    <span><span class="color-dot red"></span>一级</span>
-                    <span><span class="color-dot blue"></span>二级</span>
-                    <span><span class="color-dot gray"></span>三级</span>
+                    <span><span class="color-dot red"></span>一级·核心</span>
+                    <span><span class="color-dot blue"></span>二级·进阶</span>
+                    <span><span class="color-dot yellow"></span>三级·细节</span>
                 </div>
                 <ul id="nodeListUl"></ul>
                 <div class="node-hint">💡 点击节点展开下级 | 右键删除</div>
             </div>
 
-            <!-- 推荐学习 -->
+            <!-- 推荐学习 - 动态更新 -->
             <div class="recommend-section">
-                <h3>💡 推荐学习</h3>
+                <h3>💡 推荐学习 <span id="recommendRefreshTime" style="font-size:0.5rem;">(自动更新)</span></h3>
                 <div id="recommendList" class="recommend-list"></div>
             </div>
         </div>
@@ -95,7 +95,7 @@
 
         <!-- 右侧画布区 -->
         <div class="canvas-container" id="canvasContainer">
-            <!-- 每日语录窗口 - 可折叠 -->
+            <!-- 每日语录窗口 - 自适应大小 -->
             <div class="quote-window" id="quoteWindow">
                 <div class="quote-header" id="quoteHeader">
                     <span class="quote-icon">📜</span>

@@ -1,4 +1,4 @@
-// ==================== 三级联动知识图谱 ====================
+// ==================== 智能知识图谱 - 充电进度版 ====================
 let nodes = [];
 let nextId = 100;
 let canvasScale = 1;
@@ -6,73 +6,9 @@ let dragTarget = null;
 let dragStartX = 0, dragStartY = 0;
 let dragStartLeft = 0, dragStartTop = 0;
 let isDragging = false;
-let dragThreshold = 3; // 拖动阈值，小于此值视为点击
-
+let dragThreshold = 3;
 let uploadedFiles = [];
-
-// ==================== 每日语录库 ====================
-const quotes = [
-    { text: "学而不思则罔，思而不学则殆。", author: "孔子", explanation: "只学习不思考就会迷惑，只思考不学习就会危险。强调学习与思考的结合。" },
-    { text: "知之者不如好之者，好之者不如乐之者。", author: "孔子", explanation: "懂得学习的人不如喜爱学习的人，喜爱学习的人不如以学习为乐的人。" },
-    { text: "天行健，君子以自强不息。", author: "《周易》", explanation: "宇宙不停运转，君子应效法天地，永远不断地前进。" },
-    { text: "宝剑锋从磨砺出，梅花香自苦寒来。", author: "佚名", explanation: "宝剑的锋利来自反复磨砺，梅花的清香源于寒冬。喻指成功需经历艰苦磨练。" },
-    { text: "路漫漫其修远兮，吾将上下而求索。", author: "屈原", explanation: "前方的道路漫长遥远，我将不遗余力地追求探索。" },
-    { text: "不积跬步，无以至千里；不积小流，无以成江海。", author: "荀子", explanation: "没有一步半步的积累，无法到达千里；没有细流的汇聚，无法形成江海。" },
-    { text: "The only limit is your mind.", author: "未知", explanation: "唯一的限制是你的思想。突破思维局限，才能无限可能。" },
-    { text: "Stay hungry, stay foolish.", author: "Steve Jobs", explanation: "求知若饥，虚心若愚。保持对知识的渴望和初学者的心态。" },
-    { text: "Knowledge is power.", author: "Francis Bacon", explanation: "知识就是力量。知识能赋予我们改变世界的能力。" },
-    { text: "The future belongs to those who learn more skills.", author: "未知", explanation: "未来属于那些学习更多技能的人。" },
-    { text: "纸上得来终觉浅，绝知此事要躬行。", author: "陆游", explanation: "从书本上得到的知识终归浅薄，要真正理解需亲身实践。" },
-    { text: "问渠那得清如许？为有源头活水来。", author: "朱熹", explanation: "池塘为何如此清澈？因为有活水源头不断流入。比喻知识需要不断更新。" },
-    { text: "博观而约取，厚积而薄发。", author: "苏轼", explanation: "广泛阅读而简约吸取，深厚积累而缓慢释放。" },
-    { text: "业精于勤，荒于嬉；行成于思，毁于随。", author: "韩愈", explanation: "学业精进在于勤奋，荒废在于玩乐；做事成功在于思考，失败在于随性。" }
-];
-
-// 获取每日语录（基于日期）
-function getDailyQuote() {
-    const today = new Date().toDateString();
-    let stored = localStorage.getItem('dailyQuote');
-    let storedDate = localStorage.getItem('dailyQuoteDate');
-    
-    if (stored && storedDate === today) {
-        return JSON.parse(stored);
-    }
-    
-    // 根据日期选择不同语录
-    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
-    const quoteIndex = dayOfYear % quotes.length;
-    const quote = quotes[quoteIndex];
-    
-    localStorage.setItem('dailyQuote', JSON.stringify(quote));
-    localStorage.setItem('dailyQuoteDate', today);
-    return quote;
-}
-
-// 更新每日语录显示
-function updateDailyQuote() {
-    const quote = getDailyQuote();
-    document.getElementById('quoteText').innerHTML = `“${quote.text}”`;
-    document.getElementById('quoteAuthor').innerHTML = `—— ${quote.author}`;
-    document.getElementById('quoteExplanation').innerHTML = `📖 ${quote.explanation}`;
-}
-
-// 语录窗口折叠功能
-function initQuoteWindow() {
-    const quoteWindow = document.getElementById('quoteWindow');
-    const quoteHeader = document.getElementById('quoteHeader');
-    
-    quoteHeader.addEventListener('click', () => {
-        quoteWindow.classList.toggle('collapsed');
-    });
-    
-    // 鼠标悬停高光
-    quoteHeader.addEventListener('mouseenter', () => {
-        quoteHeader.style.background = 'rgba(59, 130, 246, 0.2)';
-    });
-    quoteHeader.addEventListener('mouseleave', () => {
-        quoteHeader.style.background = 'transparent';
-    });
-}
+let extractedKeywords = new Set(); // 存储从文件中提取的关键词
 
 // 知识扩展库
 const knowledgeExpansion = {
@@ -96,6 +32,7 @@ const knowledgeExpansion = {
     }
 };
 
+// 分类映射
 const categoryMap = {
     physics: ['物理', '量子', '力学', '相对论', '牛顿', '薛定谔', '电磁'],
     philosophy: ['哲学', '形而上学', '认识论', '伦理', '美学', '逻辑'],
@@ -104,6 +41,119 @@ const categoryMap = {
     biology: ['生物', '基因', 'DNA', '进化', '细胞', '神经']
 };
 
+// ==================== 每日语录库 ====================
+const quotes = [
+    { text: "学而不思则罔，思而不学则殆。", author: "孔子", explanation: "只学习不思考就会迷惑，只思考不学习就会危险。" },
+    { text: "知之者不如好之者，好之者不如乐之者。", author: "孔子", explanation: "懂得不如喜爱，喜爱不如以之为乐。" },
+    { text: "天行健，君子以自强不息。", author: "《周易》", explanation: "宇宙不停运转，君子应效法天地，永远不断地前进。" },
+    { text: "宝剑锋从磨砺出，梅花香自苦寒来。", author: "佚名", explanation: "成功需经历艰苦磨练。" },
+    { text: "路漫漫其修远兮，吾将上下而求索。", author: "屈原", explanation: "道路漫长，我将不遗余力地追求探索。" },
+    { text: "不积跬步，无以至千里；不积小流，无以成江海。", author: "荀子", explanation: "积累的重要性，从小做起。" },
+    { text: "The only limit is your mind.", author: "未知", explanation: "唯一的限制是你的思想。" },
+    { text: "Stay hungry, stay foolish.", author: "Steve Jobs", explanation: "求知若饥，虚心若愚。" },
+    { text: "Knowledge is power.", author: "Francis Bacon", explanation: "知识就是力量。" },
+    { text: "纸上得来终觉浅，绝知此事要躬行。", author: "陆游", explanation: "书本知识终觉浅薄，亲身实践才能真知。" },
+    { text: "问渠那得清如许？为有源头活水来。", author: "朱熹", explanation: "知识需要不断更新。" },
+    { text: "博观而约取，厚积而薄发。", author: "苏轼", explanation: "广泛阅读，深厚积累，缓慢释放。" },
+    { text: "业精于勤，荒于嬉；行成于思，毁于随。", author: "韩愈", explanation: "勤奋精进，思考成功。" }
+];
+
+// 获取随机语录
+function getRandomQuote() {
+    const randomIndex = Math.floor(Math.random() * quotes.length);
+    return quotes[randomIndex];
+}
+
+// 更新每日语录
+let quoteUpdateTimer = null;
+function updateDailyQuote() {
+    const quote = getRandomQuote();
+    const quoteText = document.getElementById('quoteText');
+    const quoteAuthor = document.getElementById('quoteAuthor');
+    const quoteExplanation = document.getElementById('quoteExplanation');
+    const quoteWindow = document.getElementById('quoteWindow');
+    
+    if (quoteText) quoteText.innerHTML = `“${quote.text}”`;
+    if (quoteAuthor) quoteAuthor.innerHTML = `—— ${quote.author}`;
+    if (quoteExplanation) quoteExplanation.innerHTML = `📖 ${quote.explanation}`;
+    
+    // 根据内容长度调整窗口宽度
+    const maxLen = Math.max(quote.text.length, quote.explanation.length);
+    if (maxLen < 20) {
+        quoteWindow.style.maxWidth = '240px';
+        quoteWindow.style.minWidth = '200px';
+    } else if (maxLen < 35) {
+        quoteWindow.style.maxWidth = '300px';
+        quoteWindow.style.minWidth = '260px';
+    } else {
+        quoteWindow.style.maxWidth = '360px';
+        quoteWindow.style.minWidth = '300px';
+    }
+}
+
+// 启动定时更新语录（每30分钟）
+function startQuoteAutoUpdate() {
+    updateDailyQuote();
+    if (quoteUpdateTimer) clearInterval(quoteUpdateTimer);
+    quoteUpdateTimer = setInterval(updateDailyQuote, 30 * 60 * 1000);
+}
+
+// 语录窗口折叠
+function initQuoteWindow() {
+    const quoteWindow = document.getElementById('quoteWindow');
+    const quoteHeader = document.getElementById('quoteHeader');
+    quoteHeader.addEventListener('click', () => quoteWindow.classList.toggle('collapsed'));
+    quoteHeader.addEventListener('mouseenter', () => quoteHeader.style.background = 'rgba(59,130,246,0.2)');
+    quoteHeader.addEventListener('mouseleave', () => quoteHeader.style.background = 'transparent');
+}
+
+// 计算节点充电进度
+function calculateNodeProgress(node) {
+    if (!node) return 0;
+    // 如果节点标签在提取的关键词中，进度100%
+    if (extractedKeywords.has(node.label)) return 100;
+    // 检查部分匹配
+    for (let kw of extractedKeywords) {
+        if (node.label.includes(kw) || kw.includes(node.label)) {
+            return 70;
+        }
+    }
+    // 自动扩展的节点（没有在笔记中提取到）进度为0
+    if (node.isAutoExpanded) return 0;
+    return 0;
+}
+
+// 计算金币（基于充电进度）
+function calculateGoldValue(node) {
+    const progress = node.progress || 0;
+    let baseGold = 0;
+    if (node.level === 1) baseGold = 100;
+    else if (node.level === 2) baseGold = 50;
+    else baseGold = 20;
+    // 根据进度计算金币：只有有进度的节点才计算金币
+    if (progress >= 100) return baseGold;
+    if (progress >= 70) return Math.floor(baseGold * 0.7);
+    if (progress >= 30) return Math.floor(baseGold * 0.3);
+    return 0;
+}
+
+// 更新所有节点进度和金币
+function updateAllNodesProgress() {
+    for (let node of nodes) {
+        node.progress = calculateNodeProgress(node);
+        node.goldValue = calculateGoldValue(node);
+    }
+}
+
+function updateAllGold() {
+    let total = 0;
+    for (let node of nodes) {
+        total += node.goldValue || 0;
+    }
+    document.getElementById('totalGold').innerHTML = `💰 ${total}`;
+    return total;
+}
+
 function getNodeCategory(label) {
     for (let [cat, keywords] of Object.entries(categoryMap)) {
         if (keywords.some(kw => label.includes(kw))) return cat;
@@ -111,26 +161,7 @@ function getNodeCategory(label) {
     return 'other';
 }
 
-function calculateGoldValue(node) {
-    let gold = 30;
-    if (node.level === 1) gold = 100;
-    else if (node.level === 2) gold = 50;
-    else gold = 20;
-    if (node.childrenIds && node.childrenIds.length > 0) gold += node.childrenIds.length * 10;
-    return gold;
-}
-
-function updateAllGold() {
-    let total = 0;
-    for (let node of nodes) {
-        node.goldValue = calculateGoldValue(node);
-        total += node.goldValue;
-    }
-    document.getElementById('totalGold').innerHTML = `💰 ${total}`;
-    return total;
-}
-
-function addNode(label, x, y, parentId = null, level = 1) {
+function addNode(label, x, y, parentId = null, level = 1, isAutoExpanded = false) {
     if (!label || label.trim() === '') return null;
     label = label.trim();
     let existing = nodes.find(n => n.label === label);
@@ -142,8 +173,10 @@ function addNode(label, x, y, parentId = null, level = 1) {
     if (parentId) {
         const parent = nodes.find(n => n.id === parentId);
         if (parent) {
-            posX = parent.x + (Math.random() - 0.5) * 150;
-            posY = parent.y + 80 + (level * 20);
+            // 避免子节点重叠：根据子节点数量计算偏移
+            const childCount = parent.childrenIds ? parent.childrenIds.length : 0;
+            posX = parent.x + (childCount - 2) * 90;
+            posY = parent.y + 80;
         }
     }
     
@@ -155,10 +188,13 @@ function addNode(label, x, y, parentId = null, level = 1) {
         level: level,
         parentId: parentId,
         childrenIds: [],
+        progress: 0,
         goldValue: 0,
         visible: true,
-        expanded: false
+        expanded: false,
+        isAutoExpanded: isAutoExpanded
     };
+    newNode.progress = calculateNodeProgress(newNode);
     newNode.goldValue = calculateGoldValue(newNode);
     nodes.push(newNode);
     
@@ -191,13 +227,13 @@ function expandNode(nodeId, level) {
                [`${node.label}基础`, `${node.label}原理`, `${node.label}应用`];
     } else if (level === 2) {
         subs = knowledgeExpansion.level3[node.label] || 
-               [`${node.label}核心概念`, `${node.label}方法论`, `${node.label}案例`];
+               [`${node.label}核心`, `${node.label}方法`, `${node.label}案例`];
     }
     
     for (let i = 0; i < subs.length; i++) {
         const sub = subs[i];
         if (!nodes.some(n => n.label === sub)) {
-            addNode(sub, node.x + (i - 2) * 80, node.y + 70, node.id, level + 1);
+            addNode(sub, node.x + (i - 2) * 80, node.y + 70, node.id, level + 1, true);
         }
     }
     node.expanded = true;
@@ -221,20 +257,15 @@ function collapseNode(nodeId) {
 function toggleExpandNode(nodeId, level) {
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
-    if (node.expanded) {
-        collapseNode(nodeId);
-    } else {
-        expandNode(nodeId, level);
-    }
+    if (node.expanded) collapseNode(nodeId);
+    else expandNode(nodeId, level);
 }
 
 function deleteNode(nodeId) {
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
     if (node.childrenIds) {
-        for (let childId of node.childrenIds) {
-            deleteNode(childId);
-        }
+        for (let childId of [...node.childrenIds]) deleteNode(childId);
     }
     for (let n of nodes) {
         if (n.childrenIds) n.childrenIds = n.childrenIds.filter(id => id !== nodeId);
@@ -242,6 +273,7 @@ function deleteNode(nodeId) {
     nodes = nodes.filter(n => n.id !== nodeId);
     renderAll();
     updateFileManager();
+    updateRecommendations();
 }
 
 function highlightPath(nodeId) {
@@ -326,11 +358,11 @@ function extractKeywords(text) {
     const words = text.split(/[ ,，。！？\n\t、；;:：]+/);
     const freq = new Map();
     for (let w of words) {
-        if (w.length < 2 || w.length > 10) continue;
+        if (w.length < 2 || w.length > 12) continue;
         if (stopWords.includes(w)) continue;
         freq.set(w, (freq.get(w) || 0) + 1);
     }
-    return [...freq.entries()].sort((a,b) => b[1]-a[1]).slice(0,5).map(k=>k[0]);
+    return [...freq.entries()].sort((a,b) => b[1]-a[1]).slice(0, 8).map(k=>k[0]);
 }
 
 async function processFile(file) {
@@ -352,6 +384,11 @@ async function processFile(file) {
         if (keywords.some(kw => kwList.includes(kw))) { category = cat; break; }
     }
     
+    // 添加到提取的关键词集合
+    for (let kw of keywords) {
+        extractedKeywords.add(kw);
+    }
+    
     uploadedFiles.push({
         id: Date.now() + Math.random(),
         name: parsed.fileName,
@@ -360,10 +397,13 @@ async function processFile(file) {
         keywords: keywords
     });
     
+    // 更新所有节点进度
+    updateAllNodesProgress();
+    
     if (keywords.length > 0) {
         for (let kw of keywords) {
             if (!nodes.some(n => n.label === kw)) {
-                addNode(kw, undefined, undefined, null, 1);
+                addNode(kw, undefined, undefined, null, 1, false);
             }
         }
         resultDiv.innerHTML = `✅ 提取: ${keywords.join(', ')}`;
@@ -371,11 +411,22 @@ async function processFile(file) {
         updateRecommendations();
         updateFileManager();
     }
+    renderAll();
 }
 
 function deleteFile(fileId) {
     uploadedFiles = uploadedFiles.filter(f => f.id !== fileId);
+    // 重新构建提取的关键词集合
+    extractedKeywords.clear();
+    for (let f of uploadedFiles) {
+        for (let kw of f.keywords) {
+            extractedKeywords.add(kw);
+        }
+    }
+    updateAllNodesProgress();
     updateFileManager();
+    renderAll();
+    updateRecommendations();
 }
 
 function updateFileManager() {
@@ -432,26 +483,32 @@ function renderAll() {
     for (let node of visibleNodes) {
         const div = document.createElement('div');
         div.className = `node-card level${node.level}`;
-        div.innerText = `${node.label} 💰${node.goldValue}`;
         div.style.left = `${node.x}px`;
         div.style.top = `${node.y}px`;
         div.setAttribute('data-id', node.id);
         div.setAttribute('data-level', node.level);
+        
+        const progress = node.progress || 0;
+        const gold = node.goldValue || 0;
+        const progressColor = node.level === 1 ? '#ef4444' : (node.level === 2 ? '#3b82f6' : '#eab308');
+        
+        div.innerHTML = `
+            <div class="node-label">${node.label}</div>
+            <div class="node-gold">💰 ${gold}</div>
+            <div class="progress-container">
+                <div class="progress-fill" style="width: ${progress}%; background: ${progressColor};"></div>
+            </div>
+        `;
         canvas.appendChild(div);
         
         div.addEventListener('click', (e) => {
             e.stopPropagation();
-            // 只有非拖拽状态才触发点击展开
-            if (!isDragging) {
-                toggleExpandNode(node.id, node.level);
-            }
+            if (!isDragging) toggleExpandNode(node.id, node.level);
         });
-        
         div.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             if (confirm(`删除 "${node.label}"？`)) deleteNode(node.id);
         });
-        
         div.addEventListener('mouseenter', () => highlightPath(node.id));
         div.addEventListener('mouseleave', () => highlightPath(null));
     }
@@ -489,33 +546,49 @@ function renderAll() {
     updateNodeListUI();
 }
 
+// 推荐学习 - 自动更新待学习类目
+function updateRecommendations() {
+    const unlearnedNodes = nodes.filter(n => {
+        const progress = n.progress || 0;
+        return progress < 30 && n.level === 2 && !n.isAutoExpanded;
+    });
+    const recDiv = document.getElementById('recommendList');
+    if (unlearnedNodes.length === 0) {
+        recDiv.innerHTML = '🎉 完成探索！继续上传新文件吧~';
+        return;
+    }
+    const top5 = unlearnedNodes.slice(0, 5);
+    recDiv.innerHTML = top5.map(n => `<div class="recommend-item" onclick="window.toggleExpandNode(${n.id},2)">📖 ${n.label} (${100 - (n.progress||0)}%未掌握)</div>`).join('');
+    document.getElementById('recommendRefreshTime').innerHTML = `(更新于${new Date().toLocaleTimeString()})`;
+}
+
+// 定时更新推荐（每2分钟）
+let recommendUpdateTimer = null;
+function startRecommendAutoUpdate() {
+    if (recommendUpdateTimer) clearInterval(recommendUpdateTimer);
+    recommendUpdateTimer = setInterval(() => {
+        updateRecommendations();
+    }, 120000);
+}
+
 function updateNodeListUI() {
     const container = document.getElementById('nodeListUl');
     container.innerHTML = '';
-    nodes.slice(0, 25).forEach(node => {
+    const topNodes = nodes.filter(n => n.level === 1).slice(0, 15);
+    for (let node of topNodes) {
         const li = document.createElement('li');
-        li.style.borderLeftColor = node.level === 1 ? '#ef4444' : (node.level === 2 ? '#3b82f6' : '#6b7280');
-        li.innerHTML = `<span>${node.label}</span><span>💰${node.goldValue}</span>`;
+        li.style.borderLeftColor = node.level === 1 ? '#ef4444' : (node.level === 2 ? '#3b82f6' : '#eab308');
+        li.innerHTML = `<span>${node.label}</span><span>💰${node.goldValue || 0}</span>`;
         li.addEventListener('click', () => toggleExpandNode(node.id, node.level));
         container.appendChild(li);
-    });
-}
-
-function updateRecommendations() {
-    const grayNodes = nodes.filter(n => n.level === 2 && !n.childrenIds?.length);
-    const recDiv = document.getElementById('recommendList');
-    if (grayNodes.length === 0) {
-        recDiv.innerHTML = '🎉 完成探索！';
-        return;
     }
-    recDiv.innerHTML = grayNodes.slice(0, 3).map(n => `<div class="recommend-item" onclick="window.toggleExpandNode(${n.id},2)">📖 ${n.label}</div>`).join('');
 }
 
 function searchNode(keyword) {
     if (!keyword) { document.getElementById('goldValue').innerText = '0'; return; }
     const found = nodes.find(n => n.label.toLowerCase().includes(keyword.toLowerCase()));
     if (found) {
-        document.getElementById('goldValue').innerText = found.goldValue;
+        document.getElementById('goldValue').innerText = found.goldValue || 0;
         highlightPath(found.id);
         setTimeout(() => highlightPath(null), 2000);
     } else {
@@ -523,13 +596,24 @@ function searchNode(keyword) {
     }
 }
 
+// 缩放和滚轮线条跟随
+let canvasScale = 1;
 function zoomCanvas(delta) {
     canvasScale = Math.min(2, Math.max(0.4, canvasScale + delta));
     document.getElementById('graphCanvas').style.transform = `scale(${canvasScale})`;
+    // 延迟重新绘制线条以跟随缩放
+    setTimeout(() => renderAll(), 50);
 }
-function resetView() { canvasScale = 1; document.getElementById('graphCanvas').style.transform = 'scale(1)'; }
+function resetView() { canvasScale = 1; document.getElementById('graphCanvas').style.transform = 'scale(1)'; setTimeout(() => renderAll(), 50); }
 
-// 拖拽逻辑 - 只有拖动才移动，点击不移动
+// 滚轮事件 - 线条跟随
+function initWheelFollow() {
+    const scrollWrapper = document.getElementById('scrollWrapper');
+    scrollWrapper.addEventListener('scroll', () => { renderAll(); });
+    scrollWrapper.addEventListener('wheel', () => { setTimeout(() => renderAll(), 30); });
+}
+
+// 拖拽逻辑
 function initDrag() {
     let dragStartClientX = 0, dragStartClientY = 0;
     let hasMoved = false;
@@ -537,7 +621,6 @@ function initDrag() {
     document.addEventListener('mousedown', (e) => {
         const node = e.target.closest('.node-card');
         if (!node || e.ctrlKey) return;
-        
         dragTarget = node;
         dragStartClientX = e.clientX;
         dragStartClientY = e.clientY;
@@ -545,36 +628,28 @@ function initDrag() {
         dragStartTop = parseInt(node.style.top);
         hasMoved = false;
         isDragging = false;
-        
         node.style.cursor = 'grabbing';
         e.preventDefault();
     });
     
     document.addEventListener('mousemove', (e) => {
         if (!dragTarget) return;
-        
         const dx = e.clientX - dragStartClientX;
         const dy = e.clientY - dragStartClientY;
-        
         if (!hasMoved && (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold)) {
             hasMoved = true;
             isDragging = true;
             dragTarget.classList.add('dragging');
         }
-        
         if (hasMoved) {
             const newLeft = dragStartLeft + dx;
             const newTop = dragStartTop + dy;
             dragTarget.style.left = `${newLeft}px`;
             dragTarget.style.top = `${newTop}px`;
-            
             const nodeId = parseInt(dragTarget.getAttribute('data-id'));
             const node = nodes.find(n => n.id === nodeId);
-            if (node) {
-                node.x = newLeft;
-                node.y = newTop;
-                renderAll();
-            }
+            if (node) { node.x = newLeft; node.y = newTop; }
+            renderAll();
         }
     });
     
@@ -585,7 +660,6 @@ function initDrag() {
             dragTarget = null;
         }
         isDragging = false;
-        hasMoved = false;
     });
 }
 
@@ -594,7 +668,6 @@ function initResize() {
     const handle = document.getElementById('resizeHandle');
     const sidebar = document.getElementById('sidebar');
     let startX, startWidth, isResizing = false;
-    
     handle.addEventListener('mousedown', (e) => {
         startX = e.clientX;
         startWidth = sidebar.offsetWidth;
@@ -602,7 +675,6 @@ function initResize() {
         document.body.style.cursor = 'ew-resize';
         e.preventDefault();
     });
-    
     document.addEventListener('mousemove', (e) => {
         if (!isResizing) return;
         const delta = e.clientX - startX;
@@ -610,13 +682,7 @@ function initResize() {
         newWidth = Math.min(450, Math.max(180, newWidth));
         sidebar.style.width = newWidth + 'px';
     });
-    
-    document.addEventListener('mouseup', () => {
-        isResizing = false;
-        document.body.style.cursor = '';
-    });
-    
-    // 触摸屏支持
+    document.addEventListener('mouseup', () => { isResizing = false; document.body.style.cursor = ''; });
     handle.addEventListener('touchstart', (e) => {
         startX = e.touches[0].clientX;
         startWidth = sidebar.offsetWidth;
@@ -630,9 +696,7 @@ function initResize() {
         newWidth = Math.min(450, Math.max(180, newWidth));
         sidebar.style.width = newWidth + 'px';
     });
-    document.addEventListener('touchend', () => {
-        isResizing = false;
-    });
+    document.addEventListener('touchend', () => { isResizing = false; });
 }
 
 function addPreset(type) {
@@ -667,7 +731,7 @@ document.getElementById('addKeywordBtn').addEventListener('click', () => {
 document.getElementById('zoomInBtn').addEventListener('click', () => zoomCanvas(0.1));
 document.getElementById('zoomOutBtn').addEventListener('click', () => zoomCanvas(-0.1));
 document.getElementById('resetViewBtn').addEventListener('click', resetView);
-document.getElementById('clearAllBtn').addEventListener('click', () => { nodes = []; nextId = 100; renderAll(); });
+document.getElementById('clearAllBtn').addEventListener('click', () => { nodes = []; nextId = 100; extractedKeywords.clear(); uploadedFiles = []; renderAll(); updateFileManager(); updateRecommendations(); });
 document.getElementById('searchKeyword').addEventListener('input', (e) => searchNode(e.target.value));
 document.getElementById('downloadAllFilesBtn').addEventListener('click', downloadAllFiles);
 
@@ -696,11 +760,12 @@ fileManagerHeader.addEventListener('click', (e) => {
 
 initDrag();
 initResize();
-initDemo();
+initWheelFollow();
 initQuoteWindow();
-updateDailyQuote();
+startQuoteAutoUpdate();
+startRecommendAutoUpdate();
+initDemo();
 
-// 暴露全局函数
 window.toggleFolder = function(header) {
     const content = header.nextElementSibling;
     if (content) {
