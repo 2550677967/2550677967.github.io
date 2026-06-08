@@ -2,138 +2,702 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>智能知识图谱 | AI学习助手 - 三级联动版</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.4.2/mammoth.browser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>智能知识图谱 | AI学习助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0a0a1a;
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 测试提示 */
+        .test-banner {
+            background: #eab308;
+            color: #000;
+            text-align: center;
+            padding: 4px;
+            font-size: 12px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 280px;
+            background: rgba(15, 15, 35, 0.95);
+            border-right: 1px solid #3b82f6;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .sidebar h1 {
+            font-size: 1.3rem;
+            margin-bottom: 4px;
+        }
+
+        .sidebar .subtitle {
+            font-size: 0.7rem;
+            color: #8b9dc3;
+            margin-bottom: 20px;
+        }
+
+        /* 上传区域 */
+        .upload-area {
+            border: 2px dashed #3b82f6;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 16px;
+            background: rgba(59,130,246,0.1);
+        }
+
+        .upload-area:hover {
+            background: rgba(59,130,246,0.2);
+        }
+
+        /* 按钮 */
+        button {
+            background: #3b82f6;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.7rem;
+            margin: 2px;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 12px 0;
+        }
+
+        .preset-btn {
+            background: rgba(59,130,246,0.3);
+            font-size: 0.65rem;
+        }
+
+        /* 节点列表 */
+        .node-list {
+            margin-top: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .node-list li {
+            background: rgba(30,30,60,0.5);
+            padding: 6px 10px;
+            border-radius: 20px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            list-style: none;
+            font-size: 0.7rem;
+        }
+
+        /* 右侧画布 */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(ellipse at center, #0f0f23 0%, #05050a 100%);
+            overflow: hidden;
+        }
+
+        .toolbar {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 10;
+            background: rgba(0,0,0,0.7);
+            border-radius: 30px;
+            padding: 6px 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        #graphCanvas {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        .node-card {
+            position: absolute;
+            background: linear-gradient(135deg, #1e1e3a, #16162e);
+            border-radius: 30px;
+            padding: 8px 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            cursor: pointer;
+            white-space: nowrap;
+            border: 1px solid #3b82f6;
+            font-size: 0.8rem;
+            transition: transform 0.1s;
+        }
+
+        .node-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 15px #3b82f6;
+        }
+
+        .node-card.level1 {
+            border-color: #ef4444;
+            background: linear-gradient(135deg, #3a1a1a, #2a0a0a);
+        }
+
+        .node-card.level2 {
+            border-color: #3b82f6;
+        }
+
+        .node-card.level3 {
+            border-color: #eab308;
+            background: linear-gradient(135deg, #3a3a1a, #2a2a0a);
+        }
+
+        .line-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .line-layer line {
+            stroke: #3b82f6;
+            stroke-width: 2;
+            stroke-dasharray: 5,5;
+        }
+
+        .footer-search {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15,15,35,0.95);
+            padding: 8px 16px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            border-top: 1px solid #3b82f6;
+        }
+
+        .footer-search input {
+            width: 300px;
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: none;
+            background: rgba(30,30,60,0.8);
+            color: white;
+        }
+
+        .gold-display {
+            background: #eab308;
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: #000;
+            font-weight: bold;
+        }
+
+        #totalGold {
+            color: #eab308;
+            font-weight: bold;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: none;
+            background: rgba(30,30,60,0.8);
+            color: white;
+        }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- 左侧控制面板 -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h1>🌌 智能知识图谱</h1>
-                <p class="subtitle">AI识别笔记 · 三级联动 · 充电进度版</p>
-            </div>
-            
-            <!-- 上传区域 -->
-            <div class="upload-section">
-                <label>📁 上传文件识别知识</label>
-                <div class="upload-area" id="uploadArea">
-                    <span class="upload-icon">📤</span>
-                    <span>点击或拖拽</span>
-                    <span class="upload-hint">图片/PDF/Word/Excel/TXT</span>
-                    <input type="file" id="fileUpload" accept="image/*,.pdf,.docx,.xlsx,.xls,.txt" multiple hidden>
-                </div>
-                <div id="uploadProgress" class="upload-progress" style="display:none">
-                    <div class="progress-bar"></div>
-                </div>
-                <div id="uploadResult" class="upload-result"></div>
-            </div>
+    <div class="test-banner">
+        ✅ 网站已加载 | 如果看到这个提示，说明HTML/CSS正常
+    </div>
 
-            <!-- 文件管理器 -->
-            <div class="file-manager-section">
-                <div class="file-manager-header" id="fileManagerHeader">
-                    <h3>📂 文件知识库</h3>
-                    <button id="downloadAllFilesBtn" class="download-btn">⬇️ 下载</button>
-                </div>
-                <div id="fileManagerContent" class="file-manager-content" style="display:block;">
-                    <div style="padding:8px;text-align:center;color:#6b7280;font-size:0.7rem;">暂无文件</div>
-                </div>
+    <div class="app-container">
+        <!-- 左侧面板 -->
+        <div class="sidebar">
+            <h1>🌌 智能知识图谱</h1>
+            <div class="subtitle">AI识别笔记 · 三级联动</div>
+
+            <!-- 上传区域 -->
+            <div class="upload-area" id="uploadArea">
+                📤 点击或拖拽文件上传
+                <input type="file" id="fileInput" accept="image/*,.txt" style="display:none" multiple>
             </div>
+            <div id="uploadResult" style="font-size:12px; margin:8px 0; color:#8b9dc3;"></div>
 
             <!-- 手动添加 -->
-            <div class="input-section">
-                <label>✏️ 手动添加</label>
-                <div class="keyword-input-group">
-                    <input type="text" id="keywordInput" placeholder="例如: 量子纠缠...">
-                    <button id="addKeywordBtn">➕</button>
-                </div>
+            <div class="input-group">
+                <input type="text" id="keywordInput" placeholder="输入知识点...">
+                <button id="addBtn">➕ 添加</button>
             </div>
 
             <!-- 预设框架 -->
-            <div class="preset-section">
-                <label>🎯 预设框架</label>
-                <div class="preset-buttons">
-                    <button class="preset-btn" data-path="physics">⚛️物理</button>
-                    <button class="preset-btn" data-path="philosophy">📜哲学</button>
-                    <button class="preset-btn" data-path="ai">🤖AI</button>
-                    <button class="preset-btn" data-path="history">🏛️历史</button>
-                    <button class="preset-btn" data-path="biology">🧬生物</button>
-                </div>
+            <div class="preset-buttons">
+                <button class="preset-btn" data-path="physics">⚛️ 物理</button>
+                <button class="preset-btn" data-path="philosophy">📜 哲学</button>
+                <button class="preset-btn" data-path="ai">🤖 AI</button>
+                <button class="preset-btn" data-path="history">🏛️ 历史</button>
             </div>
 
             <!-- 节点列表 -->
-            <div class="node-list-panel">
-                <h3>📚 知识宇宙</h3>
-                <div class="legend-compact">
-                    <span><span class="color-dot red"></span>一级·核心</span>
-                    <span><span class="color-dot blue"></span>二级·进阶</span>
-                    <span><span class="color-dot yellow"></span>三级·细节</span>
-                </div>
-                <ul id="nodeListUl"></ul>
-                <div class="node-hint">💡 点击节点展开下级 | 右键删除</div>
-            </div>
-
-            <!-- 推荐学习 - 动态更新 -->
-            <div class="recommend-section">
-                <h3>💡 推荐学习 <span id="recommendRefreshTime" style="font-size:0.5rem;">(自动更新)</span></h3>
-                <div id="recommendList" class="recommend-list"></div>
+            <div style="margin-top: 16px;">
+                <strong>📚 知识节点</strong>
+                <ul class="node-list" id="nodeList"></ul>
+                <div style="font-size:10px; color:#6b7280; margin-top:8px;">💡 点击节点展开 | 右键删除</div>
             </div>
         </div>
 
-        <!-- 伸缩按钮 -->
-        <div class="resize-handle" id="resizeHandle">
-            <div class="handle-line"></div>
-            <div class="handle-line"></div>
-            <div class="handle-line"></div>
-        </div>
-
-        <!-- 右侧画布区 -->
-        <div class="canvas-container" id="canvasContainer">
-            <!-- 每日语录窗口 - 自适应大小 -->
-            <div class="quote-window" id="quoteWindow">
-                <div class="quote-header" id="quoteHeader">
-                    <span class="quote-icon">📜</span>
-                    <span class="quote-title">每日激励</span>
-                    <span class="quote-toggle">▼</span>
-                </div>
-                <div class="quote-content" id="quoteContent">
-                    <div class="quote-text" id="quoteText">加载中...</div>
-                    <div class="quote-author" id="quoteAuthor"></div>
-                    <div class="quote-explanation" id="quoteExplanation"></div>
-                </div>
-            </div>
-
+        <!-- 右侧画布 -->
+        <div class="canvas-container">
             <div class="toolbar">
-                <button id="zoomInBtn">🔍 +</button>
-                <button id="zoomOutBtn">🔍 -</button>
-                <button id="resetViewBtn">🔄 重置</button>
-                <button id="clearAllBtn">🗑️ 清空</button>
+                <button id="zoomIn">🔍 +</button>
+                <button id="zoomOut">🔍 -</button>
+                <button id="resetView">🔄 重置</button>
                 <span id="totalGold">💰 0</span>
             </div>
             <svg id="lineSvg" class="line-layer"></svg>
-            <div class="scroll-wrapper" id="scrollWrapper">
-                <div id="graphCanvas" class="graph-canvas"></div>
-            </div>
+            <div id="graphCanvas"></div>
         </div>
     </div>
 
-    <!-- 底部搜索栏 -->
+    <!-- 底部搜索 -->
     <div class="footer-search">
-        <div class="search-wrapper">
-            <input type="text" id="searchKeyword" placeholder="🔭 搜索知识点...">
-            <div id="goldDisplay" class="gold-display">
-                <span class="gold-icon">💰</span>
-                <span id="goldValue">0</span>
-            </div>
-        </div>
+        <input type="text" id="searchInput" placeholder="🔍 搜索知识点...">
+        <div class="gold-display" id="goldDisplay">💰 0</div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        // ==================== 简化版知识图谱 ====================
+        console.log('脚本已加载');
+
+        let nodes = [];
+        let nextId = 1;
+        let canvasScale = 1;
+        let dragTarget = null;
+        let isDragging = false;
+        let dragStartX = 0, dragStartY = 0;
+
+        // 知识扩展库
+        const expansions = {
+            '量子物理': ['波粒二象性', '量子纠缠', '薛定谔方程', '海森堡不确定性'],
+            '经典力学': ['牛顿三定律', '万有引力', '动量守恒', '能量守恒'],
+            '人工智能': ['机器学习', '深度学习', '神经网络', '计算机视觉'],
+            '哲学': ['形而上学', '认识论', '伦理学', '美学'],
+            '机器学习': ['监督学习', '无监督学习', '强化学习', '决策树'],
+            '深度学习': ['CNN', 'RNN', 'Transformer', 'GAN']
+        };
+
+        // 添加节点
+        function addNode(label, x, y, parentId = null, level = 1) {
+            if (!label || label.trim() === '') return null;
+            label = label.trim();
+            
+            // 检查重复
+            if (nodes.some(n => n.label === label)) return nodes.find(n => n.label === label);
+            
+            // 计算位置
+            let posX = x || (Math.random() * 400 + 100);
+            let posY = y || (Math.random() * 250 + 100);
+            
+            if (parentId) {
+                const parent = nodes.find(n => n.id === parentId);
+                if (parent) {
+                    const childCount = parent.children ? parent.children.length : 0;
+                    posX = parent.x + (childCount - 2) * 100;
+                    posY = parent.y + 80;
+                }
+            }
+            
+            const newNode = {
+                id: nextId++,
+                label: label,
+                x: posX,
+                y: posY,
+                level: level,
+                parentId: parentId,
+                children: [],
+                goldValue: level === 1 ? 100 : (level === 2 ? 50 : 20),
+                expanded: false,
+                visible: true
+            };
+            
+            nodes.push(newNode);
+            
+            if (parentId) {
+                const parent = nodes.find(n => n.id === parentId);
+                if (parent && !parent.children.includes(newNode.id)) {
+                    parent.children.push(newNode.id);
+                }
+            }
+            
+            renderAll();
+            return newNode;
+        }
+
+        // 展开节点
+        function expandNode(nodeId, level) {
+            const node = nodes.find(n => n.id === nodeId);
+            if (!node) return;
+            
+            if (node.children && node.children.length > 0) {
+                // 已有子节点，显示它们
+                for (let childId of node.children) {
+                    const child = nodes.find(n => n.id === childId);
+                    if (child) child.visible = true;
+                }
+                node.expanded = true;
+                renderAll();
+                return;
+            }
+            
+            // 生成子节点
+            let subs = expansions[node.label];
+            if (!subs && level === 1) {
+                subs = [`${node.label}基础`, `${node.label}进阶`, `${node.label}应用`];
+            } else if (!subs && level === 2) {
+                subs = [`${node.label}核心概念`, `${node.label}方法论`];
+            }
+            
+            if (subs) {
+                for (let i = 0; i < subs.length; i++) {
+                    addNode(subs[i], node.x + (i - 2) * 90, node.y + 70, node.id, level + 1);
+                }
+            }
+            node.expanded = true;
+            renderAll();
+        }
+
+        function collapseNode(nodeId) {
+            const node = nodes.find(n => n.id === nodeId);
+            if (!node || !node.children) return;
+            for (let childId of node.children) {
+                const child = nodes.find(n => n.id === childId);
+                if (child) {
+                    child.visible = false;
+                    collapseNode(childId);
+                }
+            }
+            node.expanded = false;
+            renderAll();
+        }
+
+        function toggleNode(nodeId, level) {
+            const node = nodes.find(n => n.id === nodeId);
+            if (node.expanded) {
+                collapseNode(nodeId);
+            } else {
+                expandNode(nodeId, level);
+            }
+        }
+
+        // 删除节点
+        function deleteNode(nodeId) {
+            const node = nodes.find(n => n.id === nodeId);
+            if (!node) return;
+            
+            // 递归删除子节点
+            if (node.children) {
+                for (let childId of [...node.children]) {
+                    deleteNode(childId);
+                }
+            }
+            
+            // 从父节点中移除
+            if (node.parentId) {
+                const parent = nodes.find(n => n.id === node.parentId);
+                if (parent && parent.children) {
+                    parent.children = parent.children.filter(id => id !== nodeId);
+                }
+            }
+            
+            nodes = nodes.filter(n => n.id !== nodeId);
+            renderAll();
+        }
+
+        // 渲染图谱
+        function renderAll() {
+            const canvas = document.getElementById('graphCanvas');
+            const svgLine = document.getElementById('lineSvg');
+            
+            if (!canvas) {
+                console.error('canvas元素未找到');
+                return;
+            }
+            
+            canvas.innerHTML = '';
+            
+            const visibleNodes = nodes.filter(n => n.visible !== false);
+            
+            for (let node of visibleNodes) {
+                const div = document.createElement('div');
+                div.className = `node-card level${node.level}`;
+                div.innerText = `${node.label} 💰${node.goldValue}`;
+                div.style.left = `${node.x}px`;
+                div.style.top = `${node.y}px`;
+                div.setAttribute('data-id', node.id);
+                div.setAttribute('data-level', node.level);
+                canvas.appendChild(div);
+                
+                div.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (!isDragging) {
+                        toggleNode(node.id, node.level);
+                    }
+                });
+                
+                div.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    if (confirm(`删除 "${node.label}"？`)) {
+                        deleteNode(node.id);
+                    }
+                });
+            }
+            
+            // 绘制连线
+            svgLine.innerHTML = '';
+            for (let node of visibleNodes) {
+                if (node.children && node.children.length) {
+                    const parentDiv = document.querySelector(`.node-card[data-id='${node.id}']`);
+                    if (!parentDiv) continue;
+                    const parentRect = parentDiv.getBoundingClientRect();
+                    const canvasRect = canvas.getBoundingClientRect();
+                    const startX = parentRect.left + parentRect.width/2 - canvasRect.left;
+                    const startY = parentRect.top + parentRect.height/2 - canvasRect.top;
+                    
+                    for (let childId of node.children) {
+                        const childDiv = document.querySelector(`.node-card[data-id='${childId}']`);
+                        if (childDiv) {
+                            const childRect = childDiv.getBoundingClientRect();
+                            const endX = childRect.left + childRect.width/2 - canvasRect.left;
+                            const endY = childRect.top + childRect.height/2 - canvasRect.top;
+                            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                            line.setAttribute('x1', startX);
+                            line.setAttribute('y1', startY);
+                            line.setAttribute('x2', endX);
+                            line.setAttribute('y2', endY);
+                            svgLine.appendChild(line);
+                        }
+                    }
+                }
+            }
+            
+            updateTotalGold();
+            updateNodeList();
+        }
+
+        function updateTotalGold() {
+            const total = nodes.reduce((sum, n) => sum + n.goldValue, 0);
+            document.getElementById('totalGold').innerHTML = `💰 ${total}`;
+        }
+
+        function updateNodeList() {
+            const container = document.getElementById('nodeList');
+            if (!container) return;
+            container.innerHTML = '';
+            const topNodes = nodes.filter(n => n.level === 1);
+            for (let node of topNodes) {
+                const li = document.createElement('li');
+                li.innerHTML = `${node.label} 💰${node.goldValue}`;
+                li.onclick = () => toggleNode(node.id, 1);
+                container.appendChild(li);
+            }
+        }
+
+        // 搜索
+        function searchNode(keyword) {
+            if (!keyword) {
+                document.getElementById('goldDisplay').innerHTML = '💰 0';
+                return;
+            }
+            const found = nodes.find(n => n.label.toLowerCase().includes(keyword.toLowerCase()));
+            if (found) {
+                document.getElementById('goldDisplay').innerHTML = `💰 ${found.goldValue}`;
+                // 高亮节点
+                const el = document.querySelector(`.node-card[data-id='${found.id}']`);
+                if (el) {
+                    el.style.boxShadow = '0 0 20px #eab308';
+                    setTimeout(() => el.style.boxShadow = '', 1000);
+                }
+            } else {
+                document.getElementById('goldDisplay').innerHTML = '💰 0';
+            }
+        }
+
+        // 拖拽功能
+        function initDrag() {
+            let dragStartClientX = 0, dragStartClientY = 0;
+            let dragStartLeft = 0, dragStartTop = 0;
+            let hasMoved = false;
+            
+            document.addEventListener('mousedown', (e) => {
+                const node = e.target.closest('.node-card');
+                if (!node) return;
+                dragTarget = node;
+                dragStartClientX = e.clientX;
+                dragStartClientY = e.clientY;
+                dragStartLeft = parseInt(node.style.left);
+                dragStartTop = parseInt(node.style.top);
+                hasMoved = false;
+                isDragging = false;
+                node.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!dragTarget) return;
+                const dx = e.clientX - dragStartClientX;
+                const dy = e.clientY - dragStartClientY;
+                if (!hasMoved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+                    hasMoved = true;
+                    isDragging = true;
+                }
+                if (hasMoved) {
+                    const newLeft = dragStartLeft + dx;
+                    const newTop = dragStartTop + dy;
+                    dragTarget.style.left = `${newLeft}px`;
+                    dragTarget.style.top = `${newTop}px`;
+                    const nodeId = parseInt(dragTarget.getAttribute('data-id'));
+                    const node = nodes.find(n => n.id === nodeId);
+                    if (node) {
+                        node.x = newLeft;
+                        node.y = newTop;
+                        renderAll();
+                    }
+                }
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (dragTarget) {
+                    dragTarget.style.cursor = '';
+                    dragTarget = null;
+                }
+                isDragging = false;
+            });
+        }
+
+        // 缩放
+        function zoom(delta) {
+            canvasScale = Math.min(2, Math.max(0.5, canvasScale + delta));
+            document.getElementById('graphCanvas').style.transform = `scale(${canvasScale})`;
+            setTimeout(() => renderAll(), 50);
+        }
+        
+        function resetZoom() {
+            canvasScale = 1;
+            document.getElementById('graphCanvas').style.transform = 'scale(1)';
+            setTimeout(() => renderAll(), 50);
+        }
+
+        // 预设框架
+        function addPreset(type) {
+            const presets = {
+                physics: ['量子物理', '经典力学', '相对论'],
+                philosophy: ['哲学', '形而上学', '认识论'],
+                ai: ['人工智能', '机器学习', '深度学习'],
+                history: ['古代史', '中世纪史', '近代史']
+            };
+            for (let topic of (presets[type] || [])) {
+                if (!nodes.some(n => n.label === topic)) {
+                    addNode(topic);
+                }
+            }
+        }
+
+        // 初始化演示
+        function initDemo() {
+            addNode('量子物理', 300, 180, null, 1);
+            addNode('经典力学', 550, 180, null, 1);
+            addNode('人工智能', 420, 350, null, 1);
+            addNode('哲学', 150, 320, null, 1);
+        }
+
+        // 文件上传（简化版）
+        function setupUpload() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            const resultDiv = document.getElementById('uploadResult');
+            
+            uploadArea.onclick = () => fileInput.click();
+            
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    resultDiv.innerHTML = `📄 已选择: ${file.name}`;
+                    // 模拟提取关键词
+                    const mockKeywords = ['测试知识点', '示例概念'];
+                    for (let kw of mockKeywords) {
+                        if (!nodes.some(n => n.label === kw)) {
+                            addNode(kw);
+                        }
+                    }
+                    resultDiv.innerHTML += `<br>✅ 提取: ${mockKeywords.join(', ')}`;
+                }
+            };
+        }
+
+        // 事件绑定
+        document.getElementById('addBtn').onclick = () => {
+            const input = document.getElementById('keywordInput');
+            if (input.value.trim()) {
+                addNode(input.value.trim());
+                input.value = '';
+            }
+        };
+        
+        document.getElementById('zoomIn').onclick = () => zoom(0.1);
+        document.getElementById('zoomOut').onclick = () => zoom(-0.1);
+        document.getElementById('resetView').onclick = resetZoom;
+        document.getElementById('searchInput').oninput = (e) => searchNode(e.target.value);
+        
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.onclick = () => addPreset(btn.getAttribute('data-path'));
+        });
+        
+        // 启动
+        initDrag();
+        setupUpload();
+        initDemo();
+        
+        console.log('初始化完成，节点数量:', nodes.length);
+    </script>
 </body>
 </html>
