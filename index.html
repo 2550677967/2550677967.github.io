@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>智能知识图谱 | AI学习助手 - 完整四级联动版</title>
+    <title>智能知识图谱 | AI学习助手 - 四级联动完整版</title>
     <style>
         * {
             margin: 0;
@@ -441,17 +441,17 @@
         let currentZoom = 1;
         let activeTooltip = null;
         
-        let extractedKeywords = new Set();
+        let extractedKeywords = new Set(['量子物理', '经典力学', '人工智能', '哲学']); // 模拟已提取的关键词
         let uploadedFiles = [];
 
         // 完整四级扩展库 - 点击一级扩展二级，点击二级扩展三级，点击三级扩展四级
         const expansions = {
-            // 一级 -> 二级 (点击一级时扩展)
+            // 一级 -> 二级
             '量子物理': ['波粒二象性', '量子纠缠', '薛定谔方程'],
             '经典力学': ['牛顿三定律', '万有引力定律', '动量守恒'],
             '人工智能': ['机器学习', '深度学习', '神经网络'],
             '哲学': ['形而上学', '认识论', '伦理学'],
-            // 二级 -> 三级 (点击二级时扩展)
+            // 二级 -> 三级
             '波粒二象性': ['双缝实验', '德布罗意波长', '波函数坍缩'],
             '量子纠缠': ['贝尔不等式', 'EPR佯谬', '量子隐形传态'],
             '薛定谔方程': ['定态薛定谔方程', '含时薛定谔方程', '势阱问题'],
@@ -462,7 +462,7 @@
             '神经网络': ['感知机模型', '反向传播算法', '激活函数详解'],
             '形而上学': ['本体论', '宇宙论', '自由意志'],
             '认识论': ['知识定义', '真理理论', '怀疑论'],
-            // 三级 -> 四级 (点击三级时扩展)
+            // 三级 -> 四级
             '监督学习': ['线性回归', '逻辑回归', '决策树'],
             '双缝实验': ['干涉条纹', '观测效应', '量子擦除'],
             '本体论': ['存在范畴', '实体理论', '属性关系'],
@@ -602,6 +602,8 @@
         function addNode(label, x, y, parentId = null, level = 1, isAutoExpanded = false) {
             if (!label || label.trim() === '') return null;
             label = label.trim();
+            
+            // 检查是否已存在相同标签的节点
             let existing = nodes.find(n => n.label === label);
             if (existing) return existing;
             
@@ -647,16 +649,24 @@
 
         // 扩展当前节点的下一级（点击时调用）
         function expandNextLevel(nodeId, currentLevel) {
+            console.log("expandNextLevel called for nodeId:", nodeId, "level:", currentLevel);
+            
             if (currentLevel >= 4) {
                 console.log("已达到最大层级4级");
                 return;
             }
             
             const node = nodes.find(n => n.id === nodeId);
-            if (!node) return;
+            if (!node) {
+                console.log("Node not found:", nodeId);
+                return;
+            }
+            
+            console.log("Expanding node:", node.label, "level:", currentLevel);
             
             // 如果已经展开过且有子节点，直接显示子节点
             if (node.children && node.children.length > 0) {
+                console.log("Node already has children, showing them");
                 for (let childId of node.children) {
                     const child = nodes.find(n => n.id === childId);
                     if (child) child.visible = true;
@@ -668,6 +678,7 @@
             
             // 获取子节点列表
             const subs = getChildrenForNode(node.label, currentLevel);
+            console.log("Children to add:", subs);
             
             if (subs && subs.length > 0) {
                 for (let i = 0; i < subs.length; i++) {
@@ -700,14 +711,22 @@
 
         // 切换节点（点击时扩展下一级，再次点击收起）
         function toggleNode(nodeId, currentLevel) {
+            console.log("toggleNode called - nodeId:", nodeId, "level:", currentLevel);
             const node = nodes.find(n => n.id === nodeId);
-            if (!node) return;
+            if (!node) {
+                console.log("Node not found!");
+                return;
+            }
+            
+            console.log("Node found:", node.label, "expanded:", node.expanded);
             
             if (node.expanded) {
                 // 已展开，则收起
+                console.log("Collapsing node:", node.label);
                 collapseNode(nodeId);
             } else {
                 // 未展开，则扩展下一级
+                console.log("Expanding node:", node.label);
                 expandNextLevel(nodeId, currentLevel);
             }
             renderAll();
@@ -739,6 +758,7 @@
             canvas.innerHTML = '';
             
             const visibleNodes = nodes.filter(n => n.visible !== false);
+            console.log("Rendering nodes:", visibleNodes.length);
             
             for (let node of visibleNodes) {
                 const div = document.createElement('div');
@@ -758,21 +778,29 @@
                 `;
                 canvas.appendChild(div);
                 
+                // 绑定点击事件 - 关键修复
                 div.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (!isDragging) {
-                        toggleNode(node.id, node.level);
+                        const id = parseInt(div.getAttribute('data-id'));
+                        const clickedNode = nodes.find(n => n.id === id);
+                        if (clickedNode) {
+                            console.log("Node clicked:", clickedNode.label);
+                            toggleNode(id, clickedNode.level);
+                        }
                     }
                 });
                 
                 div.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
-                    if (confirm(`删除 "${node.label}"？`)) deleteNode(node.id);
+                    const id = parseInt(div.getAttribute('data-id'));
+                    if (confirm(`删除 "${nodes.find(n => n.id === id)?.label}"？`)) deleteNode(id);
                 });
                 
                 div.addEventListener('mouseenter', (e) => {
-                    highlightPath(node.id);
-                    showPathTooltip(node.id, e);
+                    const id = parseInt(div.getAttribute('data-id'));
+                    highlightPath(id);
+                    showPathTooltip(id, e);
                 });
                 div.addEventListener('mouseleave', () => highlightPath(null));
             }
@@ -957,7 +985,7 @@
             setTimeout(() => updateLines(), 60);
         }
         function resetView() { currentZoom = 1; document.getElementById('graphCanvas').style.transform = 'scale(1)'; setTimeout(() => updateLines(), 60); }
-        function clearAll() { nodes = []; nextId = 1; extractedKeywords.clear(); uploadedFiles = []; renderAll(); updateFileManager(); updateRecommendations(); }
+        function clearAll() { nodes = []; nextId = 1; extractedKeywords.clear(['量子物理', '经典力学', '人工智能', '哲学']); uploadedFiles = []; renderAll(); updateFileManager(); updateRecommendations(); }
 
         function initPinchZoom() {
             const wrapper = document.getElementById('canvasWrapper');
@@ -1036,11 +1064,13 @@
         }
 
         function initDemo() {
+            console.log("初始化演示节点...");
             addNode('量子物理', 350, 200, null, 1);
             addNode('经典力学', 600, 200, null, 1);
             addNode('人工智能', 480, 380, null, 1);
             addNode('哲学', 200, 350, null, 1);
             renderAll();
+            console.log("节点总数:", nodes.length);
         }
 
         function bindEvents() {
@@ -1076,7 +1106,7 @@
         startQuoteAutoUpdate();
         initDemo();
         
-        console.log("应用已启动，节点数:", nodes.length);
+        console.log("应用已启动，请点击节点测试扩展功能");
     </script>
 </body>
 </html>
