@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>智能知识图谱 | AI学习助手 - 四级联动版</title>
+    <title>智能知识图谱 | AI学习助手 - 四级联动完整版</title>
     <style>
         * {
             margin: 0;
@@ -44,7 +44,6 @@
             flex-shrink: 0;
         }
 
-        /* 伸缩按钮 */
         .resize-handle {
             width: 6px;
             background: rgba(59, 130, 246, 0.4);
@@ -54,13 +53,12 @@
             justify-content: center;
             align-items: center;
             z-index: 20;
-            transition: background 0.2s;
             flex-shrink: 0;
         }
         .resize-handle:hover { background: #3b82f6; }
-        .handle-line { width: 2px; height: 12px; background: #93c5fd; margin: 2px 0; border-radius: 1px; }
+        .handle-line { width: 2px; height: 12px; background: #93c5fd; margin: 2px 0; }
 
-        .sidebar h1 { font-size: 1.1rem; margin-bottom: 2px; background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .sidebar h1 { font-size: 1.1rem; background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .sidebar .subtitle { font-size: 0.55rem; color: #8b9dc3; margin-bottom: 12px; }
 
         .upload-area {
@@ -72,16 +70,15 @@
             margin-bottom: 10px;
             background: rgba(59,130,246,0.1);
         }
-        .upload-area:hover { background: rgba(59,130,246,0.2); }
-        .upload-icon { font-size: 1.1rem; display: block; }
-        .upload-result { font-size: 0.55rem; color: #8b9dc3; margin: 4px 0; padding: 3px; background: rgba(0,0,0,0.3); border-radius: 6px; max-height: 45px; overflow-y: auto; }
+        .upload-icon { font-size: 1rem; display: block; }
+        .upload-result { font-size: 0.5rem; color: #8b9dc3; margin-top: 4px; }
 
         .file-manager { margin-bottom: 10px; }
-        .file-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 3px 0; }
+        .file-header { display: flex; justify-content: space-between; cursor: pointer; padding: 3px 0; }
         .file-header h3 { font-size: 0.7rem; color: #93c5fd; }
-        .file-content { max-height: 70px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 6px; padding: 3px; margin-top: 3px; font-size: 0.5rem; }
-        .file-item { padding: 2px 4px; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .delete-file { background: rgba(239,68,68,0.5); padding: 0 4px; border-radius: 6px; cursor: pointer; font-size: 0.45rem; }
+        .file-content { max-height: 70px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 6px; padding: 3px; font-size: 0.5rem; }
+        .file-item { padding: 2px 4px; display: flex; justify-content: space-between; }
+        .delete-file { background: rgba(239,68,68,0.5); padding: 0 4px; border-radius: 6px; cursor: pointer; }
 
         button {
             background: #3b82f6;
@@ -90,16 +87,15 @@
             border-radius: 16px;
             color: white;
             cursor: pointer;
-            font-size: 0.6rem;
-            margin: 2px;
+            font-size: 0.55rem;
         }
         .preset-buttons { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
-        .preset-btn { background: rgba(59,130,246,0.3); font-size: 0.55rem; padding: 3px 6px; }
+        .preset-btn { background: rgba(59,130,246,0.3); font-size: 0.5rem; padding: 3px 6px; }
 
         .input-group { display: flex; gap: 5px; margin: 8px 0; }
-        .input-group input { flex: 1; padding: 4px 8px; border-radius: 16px; border: none; background: rgba(30,30,60,0.8); color: white; outline: none; font-size: 0.6rem; }
+        .input-group input { flex: 1; padding: 4px 8px; border-radius: 16px; border: none; background: rgba(30,30,60,0.8); color: white; outline: none; font-size: 0.55rem; }
 
-        .node-list { margin-top: 10px; max-height: 110px; overflow-y: auto; }
+        .node-list { margin-top: 10px; max-height: 100px; overflow-y: auto; }
         .node-list li {
             background: rgba(30,30,60,0.5);
             padding: 3px 6px;
@@ -107,13 +103,13 @@
             margin-bottom: 2px;
             cursor: pointer;
             list-style: none;
-            font-size: 0.6rem;
+            font-size: 0.55rem;
             border-left: 2px solid;
         }
         .node-hint { font-size: 0.45rem; color: #6b7280; margin-top: 5px; text-align: center; }
 
         .recommend-section { margin-top: 10px; padding: 6px; background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(168,85,247,0.05)); border-radius: 8px; }
-        .recommend-section h3 { font-size: 0.6rem; color: #eab308; margin-bottom: 3px; }
+        .recommend-section h3 { font-size: 0.55rem; color: #eab308; }
         .recommend-list { font-size: 0.5rem; max-height: 60px; overflow-y: auto; }
         .recommend-item { padding: 2px; margin-bottom: 2px; background: rgba(0,0,0,0.3); border-radius: 4px; cursor: pointer; }
 
@@ -139,15 +135,14 @@
             min-width: 160px;
         }
         .quote-window.collapsed .quote-content { display: none; }
-        .quote-window.collapsed .quote-toggle { transform: rotate(-90deg); }
-        .quote-header { padding: 5px 8px; display: flex; align-items: center; gap: 5px; border-radius: 12px; }
+        .quote-header { padding: 5px 8px; display: flex; align-items: center; gap: 5px; }
         .quote-header:hover { background: rgba(234, 179, 8, 0.15); }
-        .quote-icon { font-size: 0.75rem; }
-        .quote-title { font-size: 0.6rem; font-weight: 500; color: #eab308; flex: 1; }
-        .quote-toggle { font-size: 0.6rem; color: #93c5fd; transition: transform 0.2s; }
+        .quote-icon { font-size: 0.7rem; }
+        .quote-title { font-size: 0.55rem; color: #eab308; flex: 1; }
+        .quote-toggle { font-size: 0.55rem; transition: transform 0.2s; }
         .quote-content { padding: 0 8px 8px 8px; border-top: 1px solid rgba(234,179,8,0.2); }
-        .quote-text { font-size: 0.65rem; line-height: 1.3; color: #e0e0e0; font-style: italic; margin-bottom: 3px; }
-        .quote-author { font-size: 0.5rem; color: #eab308; text-align: right; margin-bottom: 2px; }
+        .quote-text { font-size: 0.6rem; line-height: 1.3; font-style: italic; }
+        .quote-author { font-size: 0.5rem; color: #eab308; text-align: right; }
         .quote-explanation { font-size: 0.45rem; color: #8b9dc3; }
 
         .toolbar {
@@ -162,8 +157,8 @@
             display: flex;
             gap: 5px;
         }
-        .toolbar button { background: rgba(59,130,246,0.5); padding: 2px 6px; font-size: 0.55rem; }
-        #totalGold { color: #eab308; font-weight: bold; margin-left: 8px; font-size: 0.65rem; }
+        .toolbar button { background: rgba(59,130,246,0.5); padding: 2px 6px; font-size: 0.5rem; }
+        #totalGold { color: #eab308; margin-left: 8px; font-size: 0.6rem; }
 
         .canvas-wrapper {
             width: 100%;
@@ -178,60 +173,60 @@
         #graphCanvas {
             position: relative;
             transform-origin: 0 0;
-            width: 2800px;
-            height: 2000px;
+            width: 3500px;
+            height: 2500px;
         }
 
-        /* 节点样式 - 缩小版水滴形 */
+        /* 节点样式 - 水滴形 */
         .node-card {
             position: absolute;
             border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
             cursor: pointer;
-            transition: box-shadow 0.1s, transform 0.05s;
+            transition: box-shadow 0.2s, transform 0.1s;
             user-select: none;
             overflow: visible;
-            backdrop-filter: blur(3px);
-            animation: gentleFloat 3s ease-in-out infinite;
             display: flex;
             align-items: center;
             justify-content: center;
+            animation: gentleFloat 3s ease-in-out infinite;
         }
         
         @keyframes gentleFloat {
-            0% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-2px) rotate(0.5deg); }
-            100% { transform: translateY(0px) rotate(0deg); }
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-2px); }
+            100% { transform: translateY(0px); }
         }
         
-        .node-card.dragging, .node-card.clicked-static { animation: none !important; }
+        .node-card.dragging { animation: none; cursor: grabbing; opacity: 0.85; }
+        .node-card.clicked { animation: none; transform: scale(0.98); }
         
-        /* 等级大小 - 缩小版 */
+        /* 等级大小 */
         .node-card.level1 { width: 70px; height: 50px; font-size: 0.7rem; font-weight: bold; }
         .node-card.level2 { width: 60px; height: 42px; font-size: 0.6rem; }
         .node-card.level3 { width: 50px; height: 36px; font-size: 0.55rem; }
         .node-card.level4 { width: 42px; height: 30px; font-size: 0.5rem; }
 
-        /* 等级颜色 - 暗色默认，高亮时亮色 */
+        /* 默认颜色（暗色） */
         .node-card.level1 { background: linear-gradient(145deg, #2a1a1a, #1a0a0a); border: 1.5px solid #8b3a3a; }
         .node-card.level2 { background: linear-gradient(145deg, #1a1a3a, #0a0a2a); border: 1.5px solid #3a3a6a; }
         .node-card.level3 { background: linear-gradient(145deg, #2a2a1a, #1a1a0a); border: 1.5px solid #6a6a3a; }
         .node-card.level4 { background: linear-gradient(145deg, #2a1a2a, #1a0a1a); border: 1.5px solid #6a3a6a; }
         
-        /* 高亮状态 */
-        .node-card.highlighted { 
+        /* 高亮状态（鼠标悬停/路径高亮） */
+        .node-card.highlighted {
             box-shadow: 0 0 20px currentColor;
             transform: scale(1.05);
         }
-        .node-card.level1.highlighted { border-color: #ff4444; background: linear-gradient(145deg, #4a2a2a, #3a1a1a); }
-        .node-card.level2.highlighted { border-color: #4488ff; background: linear-gradient(145deg, #2a2a5a, #1a1a4a); }
-        .node-card.level3.highlighted { border-color: #ffcc44; background: linear-gradient(145deg, #4a4a2a, #3a3a1a); }
-        .node-card.level4.highlighted { border-color: #cc66ff; background: linear-gradient(145deg, #4a2a4a, #3a1a3a); }
+        .node-card.level1.highlighted { border-color: #ff6666; background: linear-gradient(145deg, #4a2a2a, #3a1a1a); }
+        .node-card.level2.highlighted { border-color: #66aaff; background: linear-gradient(145deg, #2a2a5a, #1a1a4a); }
+        .node-card.level3.highlighted { border-color: #ffdd66; background: linear-gradient(145deg, #4a4a2a, #3a3a1a); }
+        .node-card.level4.highlighted { border-color: #dd88ff; background: linear-gradient(145deg, #4a2a4a, #3a1a3a); }
         
-        /* 路径高亮节点 */
+        /* 路径高亮（点击后路径上的节点） */
         .node-card.path-highlight {
             box-shadow: 0 0 20px #eab308;
             border-color: #eab308 !important;
-            transform: scale(1.05);
+            transform: scale(1.03);
         }
 
         /* 电量灌注背景 */
@@ -246,10 +241,10 @@
             z-index: 0;
             opacity: 0.3;
         }
-        .node-card.level1 .battery-fill { background: #ff4444; }
-        .node-card.level2 .battery-fill { background: #4488ff; }
-        .node-card.level3 .battery-fill { background: #ffcc44; }
-        .node-card.level4 .battery-fill { background: #cc66ff; }
+        .node-card.level1 .battery-fill { background: #ff6666; }
+        .node-card.level2 .battery-fill { background: #66aaff; }
+        .node-card.level3 .battery-fill { background: #ffdd66; }
+        .node-card.level4 .battery-fill { background: #dd88ff; }
 
         .node-card .content {
             position: relative;
@@ -261,13 +256,9 @@
             width: 100%;
             text-align: center;
         }
-        .node-label { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 65px; font-size: inherit; }
-        .node-card.level1 .node-label { color: #ff8888; }
-        .node-card.level2 .node-label { color: #88aaff; }
-        .node-card.level3 .node-label { color: #ffdd88; }
-        .node-card.level4 .node-label { color: #dd88ff; }
+        .node-label { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 65px; }
 
-        /* 金币图标 - 外侧右边小图标 */
+        /* 金币图标 */
         .gold-coin {
             position: absolute;
             right: -16px;
@@ -283,29 +274,24 @@
             font-size: 0.45rem;
             font-weight: bold;
             color: #1a1a2a;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
             z-index: 3;
-            border: 0.5px solid #fde047;
         }
-        .node-card.level1 .gold-coin { width: 18px; height: 18px; font-size: 0.5rem; right: -18px; }
-        .node-card.level4 .gold-coin { width: 14px; height: 14px; font-size: 0.4rem; right: -14px; }
 
-        /* 路径文字悬浮提示 */
+        /* 路径提示 */
         .path-tooltip {
             position: absolute;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0,0,0,0.9);
             color: #eab308;
             font-size: 0.5rem;
-            padding: 3px 6px;
-            border-radius: 10px;
+            padding: 3px 8px;
+            border-radius: 12px;
             white-space: nowrap;
             z-index: 30;
             pointer-events: none;
             border: 1px solid #eab308;
-            font-family: monospace;
         }
 
-        /* 线条层 - 细线 */
+        /* 线条层 */
         .line-layer {
             position: absolute;
             top: 0;
@@ -317,13 +303,14 @@
         }
         .line-layer line {
             stroke: #5b8cbf;
-            stroke-width: 1;
-            stroke-dasharray: 3,3;
-            opacity: 0.4;
+            stroke-width: 1.2;
+            stroke-dasharray: 4,3;
+            opacity: 0.5;
+            transition: stroke 0.2s, stroke-width 0.2s;
         }
         .line-layer line.path-highlight {
             stroke: #eab308;
-            stroke-width: 1.5;
+            stroke-width: 2;
             opacity: 1;
         }
 
@@ -333,7 +320,6 @@
             left: 0;
             right: 0;
             background: rgba(15,15,35,0.95);
-            backdrop-filter: blur(12px);
             padding: 5px 10px;
             display: flex;
             justify-content: center;
@@ -341,17 +327,15 @@
             border-top: 1px solid #3b82f6;
             z-index: 30;
         }
-        .footer-search input { width: 220px; padding: 5px 12px; border-radius: 24px; border: none; background: rgba(30,30,60,0.8); color: white; outline: none; font-size: 0.6rem; }
-        .gold-display { background: linear-gradient(135deg, #2a2a3a, #1a1a2a); padding: 5px 14px; border-radius: 24px; border: 1px solid #eab308; font-weight: bold; color: #eab308; font-size: 0.65rem; }
+        .footer-search input { width: 200px; padding: 5px 12px; border-radius: 24px; border: none; background: rgba(30,30,60,0.8); color: white; outline: none; font-size: 0.55rem; }
+        .gold-display { background: linear-gradient(135deg, #2a2a3a, #1a1a2a); padding: 5px 14px; border-radius: 24px; border: 1px solid #eab308; color: #eab308; font-size: 0.6rem; }
 
         @media (max-width: 768px) {
-            .sidebar { width: 200px; min-width: 150px; }
-            .node-card.level1 { width: 55px; height: 40px; }
-            .node-card.level2 { width: 48px; height: 34px; }
-            .node-card.level3 { width: 40px; height: 28px; }
-            .node-card.level4 { width: 34px; height: 24px; }
-            .node-label { max-width: 50px; }
-            .gold-coin { width: 12px; height: 12px; font-size: 0.35rem; right: -12px; }
+            .sidebar { width: 200px; }
+            .node-card.level1 { width: 55px; height: 40px; font-size: 0.6rem; }
+            .node-card.level2 { width: 48px; height: 34px; font-size: 0.55rem; }
+            .node-card.level3 { width: 42px; height: 30px; font-size: 0.5rem; }
+            .node-card.level4 { width: 36px; height: 26px; font-size: 0.45rem; }
         }
     </style>
 </head>
@@ -359,7 +343,7 @@
     <div class="app-container">
         <div class="sidebar" id="sidebar">
             <h1>🌌 智能知识图谱</h1>
-            <div class="subtitle">AI识别笔记 · 四级联动版</div>
+            <div class="subtitle">四级联动 · 自动扩展</div>
 
             <div class="upload-area" id="uploadArea">
                 <span class="upload-icon">📤</span>
@@ -371,7 +355,7 @@
             <div class="file-manager">
                 <div class="file-header" id="fileHeader">
                     <h3>📂 文件知识库</h3>
-                    <button id="downloadBtn" style="padding:1px 5px; font-size:0.45rem;">⬇️</button>
+                    <button id="downloadBtn" style="padding:1px 5px;">⬇️</button>
                 </div>
                 <div id="fileContent" class="file-content">暂无文件</div>
             </div>
@@ -391,17 +375,17 @@
             <div>
                 <strong>📚 知识宇宙</strong>
                 <div style="display:flex; gap:8px; font-size:0.45rem; margin:4px 0;">
-                    <span><span style="background:#ff4444; width:6px; height:6px; border-radius:6px; display:inline-block;"></span> 一级</span>
-                    <span><span style="background:#4488ff; width:6px; height:6px; border-radius:6px; display:inline-block;"></span> 二级</span>
-                    <span><span style="background:#ffcc44; width:6px; height:6px; border-radius:6px; display:inline-block;"></span> 三级</span>
-                    <span><span style="background:#cc66ff; width:6px; height:6px; border-radius:6px; display:inline-block;"></span> 四级</span>
+                    <span><span style="background:#ff6666; width:6px; height:6px; border-radius:6px; display:inline-block;"></span> 一级</span>
+                    <span><span style="background:#66aaff; width:6px; height:6px; border-radius:6px; display:inline-block;"></span> 二级</span>
+                    <span><span style="background:#ffdd66; width:6px; height:6px; border-radius:6px; display:inline-block;"></span> 三级</span>
+                    <span><span style="background:#dd88ff; width:6px; height:6px; border-radius:6px; display:inline-block;"></span> 四级</span>
                 </div>
                 <ul class="node-list" id="nodeList"></ul>
-                <div class="node-hint">💡 点击展开/收起 | 右键删除 | 拖拽移动</div>
+                <div class="node-hint">💡 点击节点自动展开下级 | 拖拽移动 | 右键删除</div>
             </div>
 
             <div class="recommend-section">
-                <h3>💡 推荐学习 <span id="recTime" style="font-size:0.4rem;"></span></h3>
+                <h3>💡 推荐学习</h3>
                 <div id="recommendList" class="recommend-list">加载中...</div>
             </div>
         </div>
@@ -446,7 +430,7 @@
     </div>
 
     <script>
-        // ==================== 四级联动知识图谱 ====================
+        // ==================== 四级联动知识图谱 - 完整版 ====================
         let nodes = [];
         let nextId = 1;
         let dragTarget = null;
@@ -455,29 +439,38 @@
         let dragHasMoved = false;
         let currentZoom = 1;
         let activeTooltip = null;
-        let currentHighlightedNodeId = null;
+        let hoveredNodeId = null;
         
         let extractedKeywords = new Set();
         let uploadedFiles = [];
 
-        // 四级扩展库
+        // 完整四级扩展库
         const expansions = {
+            // 一级 -> 二级
             '量子物理': ['波粒二象性', '量子纠缠', '薛定谔方程'],
+            '经典力学': ['牛顿三定律', '万有引力', '动量守恒'],
+            '人工智能': ['机器学习', '深度学习', '神经网络'],
+            '哲学': ['形而上学', '认识论', '伦理学'],
+            // 二级 -> 三级
             '波粒二象性': ['双缝实验', '德布罗意波长', '波函数坍缩'],
             '量子纠缠': ['贝尔不等式', 'EPR佯谬', '量子隐形传态'],
-            '经典力学': ['牛顿三定律', '万有引力', '动量守恒'],
-            '牛顿三定律': ['惯性定律', 'F=ma', '作用反作用'],
-            '人工智能': ['机器学习', '深度学习', '神经网络'],
+            '薛定谔方程': ['定态方程', '含时方程', '势阱问题'],
+            '牛顿三定律': ['惯性定律', '加速度定律', '作用反作用'],
             '机器学习': ['监督学习', '无监督学习', '强化学习'],
-            '监督学习': ['线性回归', '逻辑回归', '决策树'],
-            '哲学': ['形而上学', '认识论', '伦理学'],
+            '深度学习': ['卷积神经网络', '循环神经网络', '生成对抗网络'],
+            '神经网络': ['感知机', '反向传播', '激活函数'],
             '形而上学': ['本体论', '宇宙论', '自由意志'],
-            '认识论': ['知识定义', '真理理论', '怀疑论']
+            '认识论': ['知识定义', '真理理论', '怀疑论'],
+            // 三级 -> 四级
+            '监督学习': ['线性回归', '逻辑回归', '决策树'],
+            '卷积神经网络': ['卷积层', '池化层', '全连接层'],
+            '双缝实验': ['干涉条纹', '观测效应', '量子擦除'],
+            '本体论': ['存在范畴', '实体理论', '属性关系']
         };
 
         const categoryMap = {
             physics: ['物理', '量子', '力学', '牛顿'],
-            philosophy: ['哲学', '形而上学', '认识论', '伦理'],
+            philosophy: ['哲学', '形而上学', '认识论'],
             ai: ['AI', '人工智能', '机器学习', '神经网络'],
             history: ['历史', '战争', '朝代']
         };
@@ -512,8 +505,7 @@
         }
 
         // 高亮节点及其路径
-        function highlightNodeAndPath(nodeId) {
-            // 移除所有高亮
+        function highlightPath(nodeId) {
             document.querySelectorAll('.node-card').forEach(el => {
                 el.classList.remove('highlighted', 'path-highlight');
             });
@@ -522,11 +514,11 @@
             });
             
             if (!nodeId) {
-                currentHighlightedNodeId = null;
+                hoveredNodeId = null;
                 return;
             }
             
-            currentHighlightedNodeId = nodeId;
+            hoveredNodeId = nodeId;
             
             // 高亮当前节点
             const currentNodeEl = document.querySelector(`.node-card[data-id='${nodeId}']`);
@@ -591,8 +583,8 @@
             
             const rect = event.target.getBoundingClientRect();
             const containerRect = document.getElementById('canvasContainer').getBoundingClientRect();
-            tooltip.style.left = (rect.left - containerRect.left + rect.width/2 - 40) + 'px';
-            tooltip.style.top = (rect.top - containerRect.top - 22) + 'px';
+            tooltip.style.left = (rect.left - containerRect.left + rect.width/2 - 50) + 'px';
+            tooltip.style.top = (rect.top - containerRect.top - 25) + 'px';
             
             document.getElementById('canvasContainer').appendChild(tooltip);
             activeTooltip = tooltip;
@@ -601,6 +593,41 @@
                 if (activeTooltip) activeTooltip.remove();
                 activeTooltip = null;
             }, 2000);
+        }
+
+        // 自动扩展所有层级（递归展开所有子节点）
+        function autoExpandNode(nodeId, level) {
+            const node = nodes.find(n => n.id === nodeId);
+            if (!node) return;
+            
+            // 如果已经有子节点且可见，直接返回
+            if (node.children && node.children.length > 0 && node.expanded) {
+                return;
+            }
+            
+            // 获取子节点列表
+            let subs = expansions[node.label];
+            if (!subs) {
+                if (level === 1) subs = [`${node.label}基础`, `${node.label}进阶`];
+                else if (level === 2) subs = [`${node.label}核心`, `${node.label}应用`];
+                else if (level === 3) subs = [`${node.label}细节A`, `${node.label}细节B`];
+                else return;
+            }
+            
+            // 添加子节点
+            if (subs && subs.length > 0) {
+                for (let i = 0; i < Math.min(subs.length, 3); i++) {
+                    const existing = nodes.find(n => n.label === subs[i]);
+                    if (!existing) {
+                        const newChild = addNode(subs[i], node.x + (i - 1) * 85, node.y + 65, node.id, Math.min(level + 1, 4), true);
+                        // 递归扩展新节点
+                        if (newChild && level + 1 <= 3) {
+                            autoExpandNode(newChild.id, level + 1);
+                        }
+                    }
+                }
+            }
+            node.expanded = true;
         }
 
         function addNode(label, x, y, parentId = null, level = 1, isAutoExpanded = false) {
@@ -616,8 +643,8 @@
                 const parent = nodes.find(n => n.id === parentId);
                 if (parent) {
                     const childCount = parent.children ? parent.children.length : 0;
-                    posX = parent.x + (childCount - 2) * 85;
-                    posY = parent.y + 65;
+                    posX = parent.x + (childCount - 1) * 85;
+                    posY = parent.y + 70;
                 }
             }
             
@@ -646,36 +673,21 @@
                 }
             }
             
-            renderAll();
             return newNode;
         }
 
-        function expandNode(nodeId, level) {
+        // 切换节点展开（点击一级时自动扩展所有下级）
+        function toggleNode(nodeId, level) {
             const node = nodes.find(n => n.id === nodeId);
-            if (!node) return;
-            
-            if (node.children && node.children.length > 0) {
-                for (let childId of node.children) {
-                    const child = nodes.find(n => n.id === childId);
-                    if (child) child.visible = true;
-                }
-                node.expanded = true;
-                renderAll();
-                return;
+            if (node.expanded) {
+                // 收起
+                collapseNode(nodeId);
+            } else {
+                // 展开：自动扩展所有下级层级
+                autoExpandNode(nodeId, level);
             }
-            
-            let subs = expansions[node.label];
-            if (!subs && level === 1) subs = [`${node.label}基础`, `${node.label}进阶`];
-            else if (!subs && level === 2) subs = [`${node.label}核心`, `${node.label}应用`];
-            else if (!subs && level === 3) subs = [`${node.label}细节A`, `${node.label}细节B`];
-            
-            if (subs && subs.length > 0) {
-                for (let i = 0; i < Math.min(subs.length, 3); i++) {
-                    addNode(subs[i], node.x + (i - 1) * 80, node.y + 65, node.id, Math.min(level + 1, 4), true);
-                }
-            }
-            node.expanded = true;
             renderAll();
+            highlightPath(nodeId);
         }
 
         function collapseNode(nodeId) {
@@ -689,17 +701,6 @@
                 }
             }
             node.expanded = false;
-            renderAll();
-        }
-
-        function toggleNode(nodeId, level) {
-            const node = nodes.find(n => n.id === nodeId);
-            if (node.expanded) {
-                collapseNode(nodeId);
-            } else {
-                expandNode(nodeId, level);
-            }
-            highlightNodeAndPath(nodeId);
         }
 
         function deleteNode(nodeId) {
@@ -717,23 +718,19 @@
             nodes = nodes.filter(n => n.id !== nodeId);
             renderAll();
             updateRecommendations();
-            if (currentHighlightedNodeId === nodeId) highlightNodeAndPath(null);
         }
 
         function renderAll() {
             const canvas = document.getElementById('graphCanvas');
-            const svgLine = document.getElementById('lineSvg');
             if (!canvas) return;
             canvas.innerHTML = '';
             
             const visibleNodes = nodes.filter(n => n.visible !== false);
             
             for (let node of visibleNodes) {
-                const levelClass = Math.min(node.level, 4);
                 const div = document.createElement('div');
-                div.className = `node-card level${levelClass}`;
+                div.className = `node-card level${Math.min(node.level, 4)}`;
                 div.setAttribute('data-id', node.id);
-                div.setAttribute('data-level', node.level);
                 div.style.left = `${node.x}px`;
                 div.style.top = `${node.y}px`;
                 
@@ -752,8 +749,8 @@
                     e.stopPropagation();
                     if (!isDragging) {
                         toggleNode(node.id, node.level);
-                        div.classList.add('clicked-static');
-                        setTimeout(() => div.classList.remove('clicked-static'), 300);
+                        div.classList.add('clicked');
+                        setTimeout(() => div.classList.remove('clicked'), 200);
                     }
                 });
                 
@@ -763,13 +760,10 @@
                 });
                 
                 div.addEventListener('mouseenter', (e) => {
-                    highlightNodeAndPath(node.id);
+                    highlightPath(node.id);
                     showPathTooltip(node.id, e);
                 });
-                div.addEventListener('mouseleave', () => {
-                    if (currentHighlightedNodeId === node.id) return;
-                    highlightNodeAndPath(null);
-                });
+                div.addEventListener('mouseleave', () => highlightPath(null));
             }
             
             updateLines();
@@ -831,7 +825,7 @@
             const topNodes = nodes.filter(n => n.level === 1);
             for (let node of topNodes) {
                 const li = document.createElement('li');
-                li.style.borderLeftColor = '#ff4444';
+                li.style.borderLeftColor = '#ff6666';
                 li.innerHTML = `${node.label} 💰${node.goldValue || 0}`;
                 li.onclick = () => toggleNode(node.id, 1);
                 container.appendChild(li);
@@ -841,30 +835,20 @@
         function updateRecommendations() {
             const toLearn = nodes.filter(n => {
                 const battery = n.battery || 0;
-                return n.level === 2 && battery < 30 && !n.isAutoExpanded;
+                return n.level === 2 && battery < 30;
             });
             const recDiv = document.getElementById('recommendList');
             if (toLearn.length === 0) {
                 recDiv.innerHTML = '🎉 完成探索！继续上传新文件~';
                 return;
             }
-            const top3 = toLearn.slice(0, 3);
-            recDiv.innerHTML = top3.map(n => `<div class="recommend-item" onclick="window.toggleNode(${n.id},2)">📖 ${n.label}</div>`).join('');
-            document.getElementById('recTime').innerHTML = `更新于${new Date().toLocaleTimeString()}`;
-        }
-
-        let recommendTimer;
-        function startRecommendAutoUpdate() {
-            if (recommendTimer) clearInterval(recommendTimer);
-            recommendTimer = setInterval(updateRecommendations, 30000);
+            recDiv.innerHTML = toLearn.slice(0, 3).map(n => `<div class="recommend-item" onclick="window.toggleNode(${n.id},2)">📖 ${n.label}</div>`).join('');
         }
 
         const quotes = [
-            { text: "学而不思则罔，思而不学则殆。", author: "孔子", explanation: "只学习不思考就会迷惑，只思考不学习就会危险。" },
-            { text: "天行健，君子以自强不息。", author: "《周易》", explanation: "宇宙不停运转，君子应效法天地，永远不断地前进。" },
-            { text: "宝剑锋从磨砺出，梅花香自苦寒来。", author: "佚名", explanation: "成功需经历艰苦磨练。" },
-            { text: "路漫漫其修远兮，吾将上下而求索。", author: "屈原", explanation: "道路漫长，我将不遗余力地追求探索。" },
-            { text: "不积跬步，无以至千里；不积小流，无以成江海。", author: "荀子", explanation: "积累的重要性，从小做起。" }
+            { text: "学而不思则罔，思而不学则殆。", author: "孔子", explanation: "学习与思考要相结合。" },
+            { text: "天行健，君子以自强不息。", author: "《周易》", explanation: "不断进取，永不停息。" },
+            { text: "宝剑锋从磨砺出，梅花香自苦寒来。", author: "佚名", explanation: "成功需要磨砺。" }
         ];
         let quoteIndex = 0;
         function updateDailyQuote() {
@@ -891,15 +875,12 @@
             resultDiv.innerHTML = `📄 解析: ${file.name}...`;
             let text = `量子物理 机器学习 神经网络 哲学 ${file.name}`;
             const keywords = [...new Set(text.split(/[ ,，、]+/).filter(w => w.length > 1 && w.length < 12))].slice(0, 4);
-            let category = '其他';
-            for (let [cat, kwList] of Object.entries(categoryMap)) {
-                if (keywords.some(kw => kwList.includes(kw))) { category = cat; break; }
-            }
-            uploadedFiles.push({ id: Date.now(), name: file.name, keywords: keywords, category: category });
             for (let kw of keywords) extractedKeywords.add(kw);
             updateAllBatteryAndGold();
             for (let kw of keywords) {
-                if (!nodes.some(n => n.label === kw)) addNode(kw);
+                if (!nodes.some(n => n.label === kw)) {
+                    addNode(kw);
+                }
             }
             resultDiv.innerHTML = `✅ ${file.name}<br>📌 提取: ${keywords.join(', ')}`;
             renderAll();
@@ -936,8 +917,8 @@
             const found = nodes.find(n => n.label.toLowerCase().includes(keyword.toLowerCase()));
             if (found) {
                 document.getElementById('goldDisplay').innerHTML = `💰 ${found.goldValue || 0}`;
-                highlightNodeAndPath(found.id);
-                setTimeout(() => highlightNodeAndPath(null), 2000);
+                highlightPath(found.id);
+                setTimeout(() => highlightPath(null), 2000);
             } else { document.getElementById('goldDisplay').innerHTML = '💰 0'; }
         }
 
@@ -981,7 +962,6 @@
                 if (!dragHasMoved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
                     dragHasMoved = true;
                     isDragging = true;
-                    dragTarget.classList.add('dragging');
                 }
                 if (dragHasMoved) {
                     const newLeft = dragStartLeft + dx;
@@ -996,7 +976,6 @@
             });
             document.addEventListener('mouseup', () => {
                 if (dragTarget) {
-                    dragTarget.classList.remove('dragging');
                     dragTarget.style.cursor = '';
                     dragTarget.style.animation = 'gentleFloat 3s ease-in-out infinite';
                     dragTarget = null;
@@ -1017,7 +996,12 @@
 
         function addPreset(type) {
             const presets = { physics: ['量子物理', '经典力学'], philosophy: ['哲学', '形而上学'], ai: ['人工智能', '机器学习'], history: ['古代史', '中世纪史'] };
-            for (let topic of (presets[type] || [])) if (!nodes.some(n => n.label === topic)) addNode(topic);
+            for (let topic of (presets[type] || [])) {
+                if (!nodes.some(n => n.label === topic)) {
+                    addNode(topic);
+                }
+            }
+            renderAll();
         }
 
         function initDemo() {
@@ -1025,10 +1009,11 @@
             addNode('经典力学', 550, 200, null, 1);
             addNode('人工智能', 450, 350, null, 1);
             addNode('哲学', 200, 320, null, 1);
+            renderAll();
         }
 
         function bindEvents() {
-            document.getElementById('addBtn').onclick = () => { const inp = document.getElementById('keywordInput'); if (inp.value.trim()) addNode(inp.value.trim()); inp.value = ''; };
+            document.getElementById('addBtn').onclick = () => { const inp = document.getElementById('keywordInput'); if (inp.value.trim()) addNode(inp.value.trim()); inp.value = ''; renderAll(); };
             document.getElementById('zoomIn').onclick = () => zoom(0.1);
             document.getElementById('zoomOut').onclick = () => zoom(-0.1);
             document.getElementById('resetView').onclick = resetView;
@@ -1056,7 +1041,6 @@
         initQuoteWindow();
         bindEvents();
         startQuoteAutoUpdate();
-        startRecommendAutoUpdate();
         initDemo();
     </script>
 </body>
